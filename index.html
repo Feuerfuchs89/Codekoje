@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Codekoje</title>
+<meta name="description" content="Python lernen im Mimo-Stil, mit KI-Mentor, Ziel: die Raspberry-Pi-Kellerfarm.">
+<meta name="theme-color" content="#1D5FA8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Codekoje">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.4 system-ui,-apple-system,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<style>
+/* Layout: Ein-Spalten-App wie ein Logbuch – Kopf mit Fortschritt, Inhalt, feste Tableiste unten (Lernpfad · Mentor · Spielwiese) */
+:root{
+  --bg:#EDF1F0; --surface:#FFFFFF; --sunk:#E1E8E7; --line:#C9D4D3;
+  --ink:#10232D; --muted:#4E626B;
+  --accent:#1D5FA8; --accent-ink:#FFFFFF; --signal:#E3A41A;
+  --ok:#1E7D4F; --ok-bg:#DDF0E5; --err:#B3362B; --err-bg:#F8E1DE;
+  --code-bg:#0F1E26; --code-ink:#DCE7EA; --code-muted:#7E949D;
+  --f-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Menlo,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C1A21; --surface:#13252E; --sunk:#0A161C; --line:#25404B;
+  --ink:#E4EEF0; --muted:#97AEB6; --accent:#5EA2EC; --accent-ink:#06131A; --signal:#F0B93A;
+  --ok:#5CC994; --ok-bg:#12352A; --err:#F08A7E; --err-bg:#3A1D1A;
+  --code-bg:#071015; --code-ink:#DCE7EA; --code-muted:#6E8791; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1A21; --surface:#13252E; --sunk:#0A161C; --line:#25404B;
+  --ink:#E4EEF0; --muted:#97AEB6; --accent:#5EA2EC; --accent-ink:#06131A; --signal:#F0B93A;
+  --ok:#5CC994; --ok-bg:#12352A; --err:#F08A7E; --err-bg:#3A1D1A;
+  --code-bg:#071015; --code-ink:#DCE7EA; --code-muted:#6E8791; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body)}
+*{box-sizing:border-box}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 110px}
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:8px 16px}
+.brand{font:700 1.5rem/1 var(--f-display);letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.brand svg{flex:none}
+.stats{display:flex;gap:8px;font:600 .85rem var(--f-mono);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.chip b{color:var(--signal)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h2{font-size:1.35rem}
+.eyebrow{font:600 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+p{margin:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.muted{color:var(--muted)}
+code,.mono{font-family:var(--f-mono);font-size:.9em}
+:not(pre)>code{background:var(--sunk);padding:1px 5px;border-radius:5px}
+
+/* Lernpfad */
+.route{position:relative;display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.route::before{content:"";position:absolute;left:23px;top:24px;bottom:24px;border-left:2px dashed var(--line)}
+.stop{position:relative;display:flex;gap:14px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px 12px 10px;width:100%}
+.stop:disabled{cursor:not-allowed;opacity:.55}
+.buoy{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:700 .8rem var(--f-mono);background:var(--sunk);border:2px solid var(--line);z-index:1}
+.stop.done .buoy{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.stop.next{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.stop.next .buoy{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.stop .txt{min-width:0;flex:1}
+.stop .t{font:700 1.05rem var(--f-display)}
+.stop .s{font-size:.88rem;color:var(--muted)}
+.stop .xp{font:600 .78rem var(--f-mono);color:var(--muted)}
+.goal{display:flex;gap:16px;align-items:center}
+.goal-txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:6px}
+.ring{position:relative;flex:none;width:76px;height:76px;display:grid;place-items:center}
+.ring svg{position:absolute;inset:0;width:100%;height:100%}
+.ring b{font:700 .9rem var(--f-mono);font-variant-numeric:tabular-nums}
+.body pre.code{margin:10px 0}
+.ref{font-size:.9rem}
+.ref dt{font-family:var(--f-mono);font-weight:600;font-size:.85rem;margin-top:8px}
+.ref dd{margin:2px 0 0;color:var(--muted)}
+.lvl{font:600 .72rem var(--f-mono);letter-spacing:.04em;padding:3px 9px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.lvl0{background:var(--ok-bg);border-color:var(--ok)}
+.lvl1{background:var(--sunk);border-color:var(--accent)}
+.lvl2{background:var(--surface);border-color:var(--signal);color:var(--ink)}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:minmax(0,8.5rem) 1fr 5.5rem;gap:10px;align-items:center;font-size:.9rem}
+.bar>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{height:8px;background:var(--sunk);border-radius:9px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--accent);border-radius:9px}
+.bar .lv{font:600 .75rem var(--f-mono);color:var(--muted);text-align:right}
+.deltas{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;min-width:220px}
+.deltas li{display:flex;justify-content:space-between;gap:16px;font-size:.95rem}
+.deltas b{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.fillcode{line-height:2}
+.fillcode .slot{font:inherit;color:var(--code-ink);background:transparent;border:0;border-bottom:2px solid var(--signal);border-radius:0;padding:0 4px;min-width:2.4em;cursor:pointer}
+.fillcode .slot.empty{color:var(--code-muted)}
+.fillcode .slot.right{border-bottom-color:var(--ok);color:var(--ok)}
+.fillcode .slot.wrong{border-bottom-color:var(--err);color:var(--err)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip-opt{font:600 .95rem var(--f-mono);padding:9px 16px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface)}
+.chip-opt:hover{border-color:var(--accent)}
+.recap h4{font:700 1rem var(--f-display);margin:12px 0 4px}
+.recap h4:first-child{margin-top:0}
+.recap pre.code{margin:8px 0}
+.gear{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface)}
+.stats{align-items:center}
+.radios{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.radios label{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.grid2 label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;min-width:0}
+a{color:var(--accent)}
+.chartnote{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+
+/* Lektion */
+.lesson{position:fixed;inset:0;background:var(--bg);z-index:20;overflow-y:auto}
+.lesson .wrap{padding-bottom:40px}
+.lbar{display:flex;align-items:center;gap:12px;padding-block:10px 18px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:2}
+.x{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:1.2rem;flex:none}
+.prog{flex:1;height:10px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.body p+p{margin-top:10px}
+pre.code{background:var(--code-bg);color:var(--code-ink);font:14px/1.5 var(--f-mono);padding:12px 14px;border-radius:10px;overflow-x:auto;margin:0;white-space:pre}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);font-family:var(--f-mono);font-size:.92rem}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--sunk)}
+.opt.right{border-color:var(--ok);background:var(--ok-bg)}
+.opt.wrong{border-color:var(--err);background:var(--err-bg)}
+.feedback{border-radius:10px;padding:12px 14px;font-size:.95rem}
+.feedback.ok{background:var(--ok-bg);color:var(--ink);border-left:4px solid var(--ok)}
+.feedback.bad{background:var(--err-bg);color:var(--ink);border-left:4px solid var(--err)}
+.btn{border:0;border-radius:10px;padding:12px 18px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn.small{padding:8px 12px;font-size:.9rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row.end{justify-content:flex-end}
+
+/* Editor + Konsole */
+.ide{border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--code-bg)}
+.ide textarea{display:block;width:100%;min-height:150px;resize:vertical;border:0;background:var(--code-bg);color:var(--code-ink);font:14px/1.55 var(--f-mono);padding:12px 14px;tab-size:4;white-space:pre;overflow-x:auto}
+.ide textarea:focus{outline:none;box-shadow:inset 0 0 0 2px var(--accent)}
+.ide .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px 6px 14px;background:color-mix(in srgb,var(--code-bg) 80%,var(--code-ink));font:600 .72rem var(--f-mono);color:var(--code-muted);letter-spacing:.06em;text-transform:uppercase}
+.console{background:var(--code-bg);color:var(--code-ink);font:13.5px/1.5 var(--f-mono);padding:10px 14px;min-height:56px;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;border-top:1px dashed #2A414B}
+.console .e{color:#FF9B8E}
+.console .hint{color:var(--signal)}
+.console .dim{color:var(--code-muted)}
+.inrow{display:flex;gap:6px;margin-top:6px}
+.inrow input{flex:1;min-width:0;background:#1B2E37;color:var(--code-ink);border:1px solid #2A414B;border-radius:6px;padding:6px 8px;font:inherit}
+.runbtn{background:var(--signal);color:#1A1405;border:0;border-radius:7px;padding:6px 14px;font:700 .8rem var(--f-mono);text-transform:none;letter-spacing:0}
+
+/* Mentor */
+textarea.field,input.field{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:12px;font:inherit}
+textarea.field{min-height:84px;resize:vertical}
+.ideas{display:flex;flex-wrap:wrap;gap:8px}
+.idea{border:1px solid var(--line);background:var(--sunk);border-radius:999px;padding:6px 12px;font-size:.88rem}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps li button{width:100%;text-align:left;display:flex;gap:10px;align-items:baseline;background:none;border:0;padding:8px 6px;border-radius:8px}
+.steps li button[aria-current="step"]{background:var(--sunk)}
+.steps .n{font:700 .8rem var(--f-mono);color:var(--muted);flex:none;width:22px}
+.steps .done .n{color:var(--ok)}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 14px;border-radius:12px;max-width:92%;font-size:.95rem;min-width:0}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink)}
+.msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line)}
+.msg.ai pre{background:var(--code-bg);color:var(--code-ink);font:13px/1.5 var(--f-mono);padding:10px;border-radius:8px;overflow-x:auto;margin:8px 0}
+.msg.ai p+p{margin-top:8px}
+.who{font:600 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.msg.me .who{color:inherit;opacity:.8}
+.notice{font-size:.9rem;padding:10px 12px;border-radius:10px;background:var(--sunk);color:var(--muted)}
+.ladder{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Tableiste */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+nav.tabs .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
+nav.tabs button{background:none;border:0;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;font:600 .78rem var(--f-body);color:var(--muted)}
+nav.tabs button[aria-selected="true"]{color:var(--accent)}
+nav.tabs svg{width:22px;height:22px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<script>
+/* Python-Engine (Skulpt) laden: erst jsDelivr, bei Fehler unpkg */
+window.SK_READY=new Promise(done=>{
+  const hosts=["https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/","https://unpkg.com/skulpt@1.2.0/dist/"];
+  const load=src=>new Promise((ok,fail)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=fail;document.head.appendChild(s)});
+  (async()=>{for(const h of hosts){try{if(typeof Sk==="undefined")await load(h+"skulpt.min.js");await load(h+"skulpt-stdlib.js");if(typeof Sk!=="undefined"&&Sk.builtinFiles){done(true);return}}catch(e){}}done(false)})();
+});
+</script>
+
+
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="brand">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+CjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzFENUZBOCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzBGMkY1NyIvPjwvbGluZWFyR3JhZGllbnQ+CjxyYWRpYWxHcmFkaWVudCBpZD0idyIgY3g9Ii41IiBjeT0iLjM4IiByPSIuNyI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMTY0MDVGIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMEExQzJBIi8+PC9yYWRpYWxHcmFkaWVudD48L2RlZnM+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTEyIiBmaWxsPSJ1cmwoI2cpIi8+CjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI1NiAyNTYpIHNjYWxlKDEuMCkgdHJhbnNsYXRlKC0yNTYgLTI1NikiPgo8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjE3MCIgZmlsbD0idXJsKCN3KSIvPgo8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjE3MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRTNBNDFBIiBzdHJva2Utd2lkdGg9IjMwIi8+CjxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMTQ2IiBmaWxsPSJub25lIiBzdHJva2U9IiNGM0M3NjYiIHN0cm9rZS1vcGFjaXR5PSIuMzUiIHN0cm9rZS13aWR0aD0iNCIvPgo8ZyBmaWxsPSIjRTNBNDFBIj48Y2lyY2xlIGN4PSI0NDQiIGN5PSIyNTYiIHI9IjExIi8+PGNpcmNsZSBjeD0iNjgiIGN5PSIyNTYiIHI9IjExIi8+PGNpcmNsZSBjeD0iMjU2IiBjeT0iNDQ0IiByPSIxMSIvPjxjaXJjbGUgY3g9IjI1NiIgY3k9IjY4IiByPSIxMSIvPjxjaXJjbGUgY3g9IjM4OC45MzQ4IiBjeT0iMzg4LjkzNDgiIHI9IjExIi8+PGNpcmNsZSBjeD0iMTIzLjA2NTIiIGN5PSIzODguOTM0OCIgcj0iMTEiLz48Y2lyY2xlIGN4PSIzODguOTM0OCIgY3k9IjEyMy4wNjUyIiByPSIxMSIvPjxjaXJjbGUgY3g9IjEyMy4wNjUyIiBjeT0iMTIzLjA2NTIiIHI9IjExIi8+PC9nPgo8cGF0aCBkPSJNMTk2IDIwNiBMMTQ2IDI1NiBMMTk2IDMwNiBNMzE2IDIwNiBMMzY2IDI1NiBMMzE2IDMwNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHBhdGggZD0iTTI3NiAxODYgTDIzNiAzMjYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0UzQTQxQSIgc3Ryb2tlLXdpZHRoPSIyOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxwYXRoIGQ9Ik0xNjggMzUyIFEyNTYgMzMyIDM0NCAzNTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVFQTJFQyIgc3Ryb2tlLW9wYWNpdHk9Ii41NSIgc3Ryb2tlLXdpZHRoPSIxMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjwvZz48L3N2Zz4=" width="34" height="34" alt="" style="border-radius:8px">
+      Codekoje
+    </div>
+    <div class="stats">
+      <span class="chip" title="Erfahrungspunkte"><b>✦</b><span id="xp">0</span> XP</span>
+      <span class="chip" title="Tage in Folge geübt"><b>▲</b><span id="streak">0</span> d</span>
+      <button class="gear" id="gear" type="button" aria-label="Einstellungen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+  </header>
+
+  <section id="tab-path" class="stack"></section>
+  <section id="tab-mentor" class="stack" hidden></section>
+  <section id="tab-play" class="stack" hidden></section>
+</div>
+
+<div class="lesson" id="lesson" hidden></div>
+
+<nav class="tabs" aria-label="Bereiche"><div class="in" role="tablist">
+  <button role="tab" data-tab="path" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>Lernpfad</button>
+  <button role="tab" data-tab="mentor" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Mentor</button>
+  <button role="tab" data-tab="play" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>Spielwiese</button>
+</div></nav>
+
+<script>
+/* ---------- Lerninhalte ---------- */
+/*BASICS*/const LESSONS = [{"id": "print", "title": "Hallo, Python", "sub": "Ausgaben mit print()", "steps": [{"t": "info", "title": "Dein erster Befehl", "body": "<p>Ein Programm ist eine Liste von Befehlen, die Python von oben nach unten abarbeitet.</p><p>Der Befehl <code>print()</code> schreibt etwas in die <b>Konsole</b>, also das dunkle Feld unter dem Code. Was ausgegeben werden soll, steht <b>in den runden Klammern</b>.</p><p>Text muss in <b>Anführungszeichen</b> stehen. So weiß Python: Das ist kein Befehl, das ist einfach Text.</p><p>Drück auf <b>▶ Ausführen</b> und schau, was passiert.</p>", "code": "print(\"Moin aus Leipzig!\")"}, {"t": "fill", "q": "Ergänze den Befehl, damit der Text erscheint.", "code": "___(\"Leinen los!\")", "blanks": ["print"], "opts": ["print", "Print", "zeige"], "why": "Befehle schreibt man in Python genau so wie vorgesehen, und zwar klein. <code>Print</code> mit großem P kennt Python nicht.", "run": true, "output": "Leinen los!"}, {"t": "info", "title": "Zahlen und Rechnungen", "body": "<p>Zahlen brauchen <b>keine</b> Anführungszeichen. Python rechnet sie sogar aus.</p><p>Steht eine Rechnung aber in Anführungszeichen, ist sie für Python nur Text und wird genau so ausgegeben.</p><p>Jeder <code>print()</code>-Befehl schreibt in eine neue Zeile.</p>", "code": "print(42)\nprint(3 + 4)\nprint(\"3 + 4\")"}, {"t": "quiz", "q": "Was gibt dieser Code aus?", "code": "print(\"3 + 4\")", "opts": ["7", "3 + 4", "\"3 + 4\""], "a": 1, "why": "Wegen der Anführungszeichen ist es Text. Python rechnet nicht, sondern gibt den Text aus. Die Anführungszeichen selbst erscheinen dabei nicht."}, {"t": "quiz", "q": "Was passiert bei <code>print(Hallo)</code>, also ohne Anführungszeichen?", "opts": ["Es erscheint Hallo", "Es gibt einen Fehler, weil Python Hallo für einen Namen hält, den es nicht kennt", "Es erscheint gar nichts"], "a": 1, "why": "Ohne Anführungszeichen sucht Python nach etwas, das Hallo heißt. Das gibt es nicht, also kommt ein NameError. Den Fehler wirst du noch oft sehen, und er heißt fast immer: Anführungszeichen vergessen oder vertippt."}, {"t": "code", "task": "Lass Python <code>Ahoi, Welt!</code> ausgeben.", "start": "# Schreib in die nächste Zeile deinen print-Befehl:\n", "hint": "print(\"Ahoi, Welt!\"): Befehl, runde Klammern, darin der Text in Anführungszeichen.", "mustContain": [], "expect": "Ahoi, Welt!"}]}, {"id": "vars", "title": "Variablen", "sub": "Werte unter einem Namen merken", "steps": [{"t": "info", "title": "Eine Kiste mit Etikett", "body": "<p>Eine <b>Variable</b> ist wie eine Kiste mit einem Namensschild. Du legst einen Wert hinein und holst ihn später über den Namen wieder heraus.</p><p>Das <code>=</code> bedeutet in Python <b>nicht</b> „ist gleich“, sondern <b>„leg hinein“</b>. <code>boot = \"Kutter\"</code> heißt: Leg den Text Kutter in die Kiste namens boot.</p><p>Namen schreibst du klein und ohne Leerzeichen. Statt Umlauten nimmst du lieber ae, oe, ue, für mehrere Wörter einen Unterstrich: <code>crew_groesse</code>.</p>", "code": "boot = \"Kutter\"\ncrew = 6\nprint(boot)\nprint(crew)"}, {"t": "fill", "q": "Leg den Text Seesportclub in die Variable <code>verein</code>.", "code": "verein ___ \"Seesportclub\"\nprint(verein)", "blanks": ["="], "opts": ["=", "==", ":"], "why": "Ein einfaches = legt einen Wert in die Variable. Das doppelte == lernst du später, damit vergleicht man.", "run": true, "output": "Seesportclub"}, {"t": "info", "title": "Mit oder ohne Anführungszeichen?", "body": "<p>Im <code>print()</code> macht das einen großen Unterschied:</p><p><code>print(boot)</code> ohne Anführungszeichen gibt den <b>Inhalt</b> der Kiste aus, also Kutter.</p><p><code>print(\"boot\")</code> mit Anführungszeichen gibt einfach das <b>Wort</b> boot aus.</p><p>Mehrere Dinge trennst du im <code>print()</code> mit Komma. Python setzt dann automatisch ein Leerzeichen dazwischen.</p>", "code": "boot = \"Kutter\"\nprint(boot)\nprint(\"boot\")\nprint(\"Unser Boot:\", boot)"}, {"t": "quiz", "q": "Was gibt der Code aus?", "code": "crew = 6\ncrew = 8\nprint(crew)", "opts": ["6", "8", "6 8"], "a": 1, "why": "Die Kiste hat nur Platz für einen Wert. Die zweite Zeile ersetzt die 6 durch die 8."}, {"t": "quiz", "q": "Was gibt <code>print(\"Crew:\", crew)</code> aus, wenn <code>crew = 8</code> ist?", "opts": ["Crew: crew", "Crew: 8", "Crew:8"], "a": 1, "why": "\"Crew:\" ist Text, crew ohne Anführungszeichen ist die Variable mit der 8. Das Komma setzt ein Leerzeichen dazwischen."}, {"t": "code", "task": "Lege eine Variable <code>verein</code> mit dem Text <code>Seesportclub</code> an und gib sie aus. Die Ausgabe ist dann einfach <code>Seesportclub</code>.", "start": "# 1. Variable anlegen (Name, =, Text in Anführungszeichen)\n\n# 2. Variable ausgeben (ohne Anführungszeichen!)\n\n", "mustContain": ["verein"], "hint": "Erste Zeile: verein = \"Seesportclub\". Zweite Zeile: print(verein).", "expect": "Seesportclub"}]}, {"id": "math", "title": "Rechnen", "sub": "Zahlen und Rechenzeichen", "steps": [{"t": "info", "title": "Python als Taschenrechner", "body": "<p>Die Grundrechenarten kennst du: <code>+</code> plus, <code>-</code> minus, <code>*</code> mal (das Sternchen), <code>/</code> geteilt.</p><p>Punkt vor Strich gilt auch hier, und Klammern funktionieren wie in Mathe.</p><p>Kommazahlen schreibt Python mit <b>Punkt</b>: <code>2.5</code> statt 2,5.</p>", "code": "print(3 + 4 * 2)\nprint((3 + 4) * 2)\nprint(10 / 4)"}, {"t": "quiz", "q": "Was ergibt <code>10 / 4</code>?", "opts": ["2", "2.5", "2,5"], "a": 1, "why": "Normales Teilen ergibt eine Kommazahl, und Python schreibt sie mit Punkt."}, {"t": "info", "title": "Ganze Teile und Rest", "body": "<p>Zwei Zeichen sind neu und sehr praktisch:</p><p><code>//</code> teilt und schneidet die Nachkommastellen ab. 17 Leute in Fünferbooten: <code>17 // 5</code> ergibt 3 volle Boote.</p><p><code>%</code> gibt den <b>Rest</b>. <code>17 % 5</code> ergibt 2, also 2 Leute bleiben übrig.</p><p><code>**</code> heißt hoch: <code>2 ** 3</code> ist 8.</p>", "code": "leute = 17\nprint(leute // 5)\nprint(leute % 5)"}, {"t": "fill", "q": "Wie viele <b>volle</b> Fünferboote bekommst du mit 17 Leuten?", "code": "boote = 17 ___ 5\nprint(boote)", "blanks": ["//"], "opts": ["//", "/", "%"], "why": "// teilt ohne Rest. Mit / bekämst du 3.4, mit % den Rest 2.", "run": true, "output": "3"}, {"t": "info", "title": "Rechnen mit Variablen", "body": "<p>Statt fester Zahlen kannst du Variablen benutzen und das Ergebnis wieder in eine Variable legen. So bleibt der Code lesbar.</p>", "code": "minuten = 150\nstunden = minuten / 60\nprint(stunden)"}, {"t": "code", "task": "Ein Training dauert 90 Minuten, es gab 7 Trainings. Rechne die Gesamtzeit in <b>Stunden</b> aus und gib sie aus. Ergebnis: <code>10.5</code>", "start": "minuten = 90\ntrainings = 7\n\n# 1. Gesamtminuten ausrechnen: minuten mal trainings\ngesamt = 0\n\n# 2. In Stunden umrechnen (durch 60) und ausgeben\n\n", "hint": "gesamt = minuten * trainings und danach print(gesamt / 60).", "mustContain": [], "expect": "10.5"}]}, {"id": "str", "title": "Texte", "sub": "Text zusammenbauen", "steps": [{"t": "info", "title": "Texte verbinden", "body": "<p>Text heißt in Python <b>String</b>. Mit <code>+</code> klebst du Texte aneinander. Leerzeichen musst du selbst mit einbauen.</p><p>Eine Zahl kann man nicht direkt an Text kleben. Mit <code>str(zahl)</code> machst du aus der Zahl erst einen Text.</p>", "code": "name = \"Micha\"\nprint(\"Moin \" + name)\nknoten = 12\nprint(\"Knoten: \" + str(knoten))"}, {"t": "quiz", "q": "Was gibt <code>print(\"ab\" * 3)</code> aus?", "opts": ["ababab", "ab3", "Fehler"], "a": 0, "why": "Text mal Zahl wiederholt den Text."}, {"t": "info", "title": "f-Strings: Lücken im Text füllen", "body": "<p>Bequemer geht es mit einem <b>f-String</b>:</p><p>1. Schreib ein <code>f</code> direkt vor die Anführungszeichen.<br>2. Setz Variablen in <b>geschweifte Klammern</b> <code>{ }</code> in den Text.</p><p>Python füllt die Lücken mit den Werten. <code>str()</code> brauchst du dafür nicht.</p>", "code": "name = \"Micha\"\nknoten = 12\nprint(f\"{name} kann {knoten} Knoten.\")"}, {"t": "fill", "q": "Mach daraus einen f-String, damit der Name eingesetzt wird.", "code": "name = \"Anna\"\nprint(___\"{name} rudert heute.\")", "blanks": ["f"], "opts": ["f", "s", "+"], "why": "Nur mit dem f vorne füllt Python die geschweiften Klammern aus. Ohne f stünde da wörtlich {name}.", "run": true, "output": "Anna rudert heute."}, {"t": "info", "title": "Wie lang ist ein Text?", "body": "<p><code>len(text)</code> zählt die Zeichen, Leerzeichen eingeschlossen.</p>", "code": "print(len(\"Palstek\"))\nprint(len(\"Leinen los\"))"}, {"t": "code", "task": "Gib mit einem f-String genau diesen Satz aus: <code>Der Kutter hat 8 Plätze.</code>", "start": "boot = \"Kutter\"\nplaetze = 8\n\n# Schreib hier print(f\"...\") und setz boot und plaetze in { } ein\n", "mustContain": ["f\"", "{"], "hint": "print(f\"Der {boot} hat {plaetze} Plätze.\")", "expect": "Der Kutter hat 8 Plätze."}]}, {"id": "bool", "title": "Wahr oder falsch", "sub": "Vergleichen mit True und False", "steps": [{"t": "info", "title": "Fragen an Python", "body": "<p>Ein <b>Vergleich</b> ist eine Frage, auf die Python mit <code>True</code> (wahr) oder <code>False</code> (falsch) antwortet.</p><p><code>&lt;</code> kleiner, <code>&gt;</code> größer, <code>&lt;=</code> kleiner oder gleich, <code>&gt;=</code> größer oder gleich.</p><p><code>==</code> fragt „ist gleich?“. Das sind <b>zwei</b> Gleichheitszeichen, denn das einfache = legt ja etwas in eine Variable. <code>!=</code> fragt „ist ungleich?“.</p>", "code": "wind = 5\nprint(wind > 3)\nprint(wind == 7)\nprint(wind != 7)"}, {"t": "quiz", "q": "Was ist der Unterschied zwischen <code>=</code> und <code>==</code>?", "opts": ["Keiner", "= legt einen Wert in eine Variable, == vergleicht zwei Werte", "== ist nur für Texte"], "a": 1, "why": "Das verwechselt am Anfang jeder. Merksatz: eins zum Hineinlegen, zwei zum Fragen."}, {"t": "fill", "q": "Prüfe, ob der Wind <b>mindestens</b> 7 Beaufort hat.", "code": "wind = 7\nprint(wind ___ 7)", "blanks": [">="], "opts": [">=", ">", "=>"], "why": "Mindestens 7 heißt: 7 oder mehr, also >=. Das Zeichen schreibt man immer in dieser Reihenfolge, => gibt es nicht.", "run": true, "output": "True"}, {"t": "info", "title": "Fragen kombinieren: and, or, not", "body": "<p><code>and</code>: beides muss stimmen.<br><code>or</code>: eins von beiden reicht.<br><code>not</code>: dreht die Antwort um, aus True wird False.</p><p>Variablen können auch direkt True oder False enthalten, zum Beispiel <code>regen = False</code>.</p>", "code": "wind = 4\nregen = False\nprint(wind < 6 and not regen)\nprint(wind > 6 or regen)"}, {"t": "quiz", "q": "Was ergibt <code>True and False</code>?", "opts": ["True", "False"], "a": 1, "why": "Bei and muss beides wahr sein. Eins ist falsch, also ist das Ganze falsch."}, {"t": "code", "task": "Wir segeln, wenn der Wind unter 6 liegt <b>und</b> es <b>nicht</b> regnet. Gib das Ergebnis dieser Frage aus (also <code>True</code> oder <code>False</code>).", "start": "wind = 4\nregen = False\n\n# Schreib hier print( ... ) mit and und not\n", "mustContain": ["and", "not"], "hint": "print(wind < 6 and not regen)", "expect": "True"}]}, {"id": "if", "title": "Entscheidungen", "sub": "if, else und elif", "steps": [{"t": "info", "title": "Wenn … dann", "body": "<p>Mit <code>if</code> führt Python Code <b>nur dann</b> aus, wenn eine Bedingung wahr ist. Eine Bedingung ist ein Vergleich aus der letzten Lektion.</p><p>So ist es aufgebaut:</p><p>1. <code>if</code>, dann die Bedingung, dann ein <b>Doppelpunkt</b> <code>:</code><br>2. In der nächsten Zeile wird <b>eingerückt</b>, also 4 Leerzeichen nach rechts. Im Editor macht das die Tab-Taste, nach einem Doppelpunkt rückt er sogar selbst ein.<br>3. Alles, was eingerückt ist, gehört zum if. Die erste Zeile, die wieder ganz links steht, läuft immer.</p>", "code": "temp = 15\nif temp < 18:\n    print(\"Zu kalt für die Microgreens!\")\n    print(\"Heizung an.\")\nprint(\"Messung fertig.\")"}, {"t": "quiz", "q": "Was gibt der Code oben aus, wenn <code>temp = 21</code> ist?", "opts": ["Nur: Messung fertig.", "Alle drei Zeilen", "Gar nichts"], "a": 0, "why": "21 &lt; 18 ist False, also werden die beiden eingerückten Zeilen übersprungen. Die letzte Zeile ist nicht eingerückt und läuft immer."}, {"t": "fill", "q": "Was fehlt am Ende der if-Zeile?", "code": "temp = 15\nif temp < 18___\n    print(\"kalt\")", "blanks": [":"], "opts": [":", ";", "."], "why": "Ohne Doppelpunkt gibt es einen SyntaxError. Der Doppelpunkt sagt Python: Jetzt kommt der eingerückte Teil.", "run": true, "output": "kalt"}, {"t": "info", "title": "Sonst: else", "body": "<p>Mit <code>else</code> sagst du, was passieren soll, wenn die Bedingung <b>nicht</b> stimmt.</p><p><code>else</code> steht genau so weit links wie das <code>if</code>, hat keine eigene Bedingung, aber auch einen Doppelpunkt. Darunter wird wieder eingerückt.</p>", "code": "temp = 21\nif temp < 18:\n    print(\"kalt\")\nelse:\n    print(\"angenehm\")"}, {"t": "fill", "q": "Ergänze die Lücken, damit bei 12 °C „kalt“ und sonst „ok“ erscheint.", "code": "temp = 12\n___ temp < 18:\n    print(\"kalt\")\n___:\n    print(\"ok\")", "blanks": ["if", "else"], "opts": ["if", "else", "wenn", "sonst"], "why": "Python versteht nur die englischen Wörter if und else.", "run": true, "output": "kalt"}, {"t": "info", "title": "Mehrere Fälle: elif", "body": "<p>Bei mehr als zwei Möglichkeiten hängst du mit <code>elif</code> (kurz für „else if“) weitere Bedingungen dazwischen.</p><p>Python prüft von oben nach unten. Der <b>erste</b> Fall, der stimmt, wird ausgeführt, der Rest übersprungen. <code>else</code> fängt alles auf, was übrig bleibt.</p>", "code": "wind = 6\nif wind >= 7:\n    print(\"Hafen bleibt zu\")\nelif wind >= 5:\n    print(\"Nur mit Erfahrung\")\nelse:\n    print(\"Leinen los\")"}, {"t": "quiz", "q": "Was gibt der Code oben bei <code>wind = 4</code> aus?", "opts": ["Hafen bleibt zu", "Nur mit Erfahrung", "Leinen los"], "a": 2, "why": "4 ist weder ≥ 7 noch ≥ 5, also greift else."}, {"t": "code", "task": "Wenn <code>alter</code> kleiner als 18 ist, gib <code>Jugend</code> aus, sonst <code>Erwachsen</code>.", "start": "alter = 15\n\n# Zeile 1: if, Bedingung, Doppelpunkt\n# Zeile 2: eingerückt print(\"Jugend\")\n# Zeile 3: else mit Doppelpunkt\n# Zeile 4: eingerückt print(\"Erwachsen\")\n", "mustContain": ["if", "else"], "hint": "if alter < 18:  dann eingerückt print(\"Jugend\"), dann else:  und eingerückt print(\"Erwachsen\")", "expect": "Jugend"}]}, {"id": "kurz", "title": "Kurzschreibweisen", "sub": "+= und die Entscheidung in einer Zeile", "steps": [{"t": "info", "title": "Hochzählen mit +=", "body": "<p>Oft willst du einen Wert erhöhen, zum Beispiel einen Zähler. Lang geschrieben: <code>punkte = punkte + 5</code> heißt: Nimm den alten Wert, rechne 5 dazu und leg das Ergebnis wieder hinein.</p><p>Kurz geht das mit <code>punkte += 5</code>. Genauso gibt es <code>-=</code> zum Abziehen.</p>", "code": "punkte = 0\npunkte += 5\npunkte += 5\nprint(punkte)\npunkte -= 3\nprint(punkte)"}, {"t": "quiz", "q": "<code>x = 10</code>, danach <code>x -= 3</code>. Welchen Wert hat x?", "opts": ["13", "7", "-3"], "a": 1, "why": "x -= 3 ist kurz für x = x - 3, also 10 - 3."}, {"t": "info", "title": "Entscheidung in einer Zeile", "body": "<p>Manchmal willst du nur einen von zwei Werten auswählen. Dafür gibt es die Kurzform:</p><p><code>wert = \"AN\" if an else \"AUS\"</code></p><p>Lies es so: „AN, wenn an wahr ist, sonst AUS“. Das brauchst du in der Kellerfarm ständig, zum Beispiel für Lüfter oder Licht.</p>", "code": "an = True\nprint(\"AN\" if an else \"AUS\")\nfeuchte = 72\nzustand = \"feucht\" if feuchte > 80 else \"trocken\"\nprint(zustand)"}, {"t": "fill", "q": "Ergänze die Kurzform: nass ab über 80 %, sonst trocken.", "code": "feuchte = 85\ntext = \"nass\" ___ feuchte > 80 ___ \"trocken\"\nprint(text)", "blanks": ["if", "else"], "opts": ["if", "else", "elif", "then"], "why": "Die Reihenfolge ist immer: Wert wenn wahr, if, Bedingung, else, Wert wenn falsch.", "run": true, "output": "nass"}, {"t": "code", "task": "Erhöhe <code>punkte</code> zweimal mit <code>+=</code> um 8. Lege dann mit der einzeiligen Entscheidung in <code>ergebnis</code> den Text <code>bestanden</code> (ab 15 Punkten) oder <code>nicht bestanden</code>. Gib zum Schluss <code>punkte</code> und <code>ergebnis</code> aus: <code>16 bestanden</code>", "start": "punkte = 0\n\n# 1. zweimal um 8 erhöhen\n\n# 2. ergebnis = \"...\" if ... else \"...\"\n\n# 3. print(punkte, ergebnis)\n", "mustContain": ["+=", "if", "else"], "hint": "punkte += 8 (zweimal), dann ergebnis = \"bestanden\" if punkte >= 15 else \"nicht bestanden\"", "expect": "16 bestanden"}]}, {"id": "list", "title": "Listen", "sub": "Viele Werte in einer Variable", "steps": [{"t": "info", "title": "Eine Liste", "body": "<p>Eine <b>Liste</b> speichert mehrere Werte der Reihe nach. Sie steht in <b>eckigen Klammern</b> <code>[ ]</code>, die Werte sind mit Komma getrennt.</p><p>Jeder Platz hat eine Nummer, den <b>Index</b>. Gezählt wird ab <b>0</b>: Das erste Element ist <code>liste[0]</code>, das zweite <code>liste[1]</code>.</p>", "code": "knoten = [\"Palstek\", \"Achtknoten\", \"Webeleinstek\"]\nprint(knoten[0])\nprint(knoten[2])"}, {"t": "quiz", "q": "Was ist <code>[\"a\", \"b\", \"c\"][1]</code>?", "opts": ["a", "b", "c"], "a": 1, "why": "Index 0 ist a, Index 1 ist b."}, {"t": "fill", "q": "Gib das <b>erste</b> Element aus.", "code": "knoten = [\"Palstek\", \"Achtknoten\"]\nprint(knoten[___])", "blanks": ["0"], "opts": ["0", "1", "erste"], "why": "Listen zählen ab 0.", "run": true, "output": "Palstek"}, {"t": "info", "title": "Anhängen, zählen, das letzte Element", "body": "<p><code>liste.append(wert)</code> hängt einen Wert hinten an. Der Punkt bedeutet: Mach das <b>mit dieser</b> Liste.</p><p><code>len(liste)</code> zählt die Elemente.</p><p><code>liste[-1]</code> ist immer das <b>letzte</b> Element, egal wie lang die Liste ist.</p>", "code": "knoten = [\"Palstek\", \"Webeleinstek\"]\nknoten.append(\"Achtknoten\")\nprint(knoten)\nprint(len(knoten))\nprint(knoten[-1])"}, {"t": "quiz", "q": "Eine Liste hat 3 Elemente, du hängst eins an. Was gibt <code>len()</code> zurück?", "opts": ["3", "4", "5"], "a": 1, "why": "3 plus 1 ergibt 4."}, {"t": "code", "task": "Hänge <code>Kreuzknoten</code> an die Liste an und gib dann das <b>letzte</b> Element aus.", "start": "knoten = [\"Palstek\", \"Achtknoten\"]\n\n# 1. Kreuzknoten mit append anhängen\n\n# 2. letztes Element ausgeben\n", "mustContain": ["append"], "hint": "knoten.append(\"Kreuzknoten\") und dann print(knoten[-1])", "expect": "Kreuzknoten"}]}, {"id": "for", "title": "Schleifen mit for", "sub": "Für jedes Element etwas tun", "steps": [{"t": "info", "title": "Für jedes Element …", "body": "<p>Eine <code>for</code>-Schleife geht eine Liste Element für Element durch.</p><p><code>for knoten in knotenliste:</code> heißt: Nimm nacheinander jedes Element, nenn es jeweils <code>knoten</code> und führe den eingerückten Teil damit aus.</p><p>Den Namen hinter <code>for</code> denkst du dir selbst aus. Doppelpunkt und Einrückung funktionieren wie beim if.</p>", "code": "for knoten in [\"Palstek\", \"Achtknoten\"]:\n    print(\"Üben:\", knoten)\nprint(\"Fertig\")"}, {"t": "quiz", "q": "Wie oft wird „Üben“ ausgegeben, wenn die Liste 4 Knoten hat?", "opts": ["1-mal", "4-mal", "5-mal"], "a": 1, "why": "Für jedes Element läuft der eingerückte Teil einmal."}, {"t": "info", "title": "Zählen mit range", "body": "<p><code>range(5)</code> liefert die Zahlen 0, 1, 2, 3, 4, also 5 Stück und ohne die 5 selbst.</p><p>Damit wiederholst du etwas eine bestimmte Anzahl von Malen.</p>", "code": "for i in range(3):\n    print(\"Runde\", i)"}, {"t": "quiz", "q": "Wie oft läuft <code>for i in range(5):</code>?", "opts": ["4-mal", "5-mal", "6-mal"], "a": 1, "why": "range(5) liefert 0, 1, 2, 3, 4, also fünf Werte."}, {"t": "info", "title": "Aufsummieren", "body": "<p>Ein typisches Muster ist: <b>vor</b> der Schleife <code>summe = 0</code>, <b>in</b> der Schleife <code>summe += wert</code>, <b>nach</b> der Schleife ausgeben.</p><p>Das <code>print</code> ist dabei nicht eingerückt, sonst würde es bei jeder Runde ausgegeben.</p>", "code": "liter = [2, 3, 1]\nsumme = 0\nfor l in liter:\n    summe += l\nprint(\"Gesamt:\", summe, \"Liter\")"}, {"t": "fill", "q": "Ergänze das Aufsummieren.", "code": "werte = [4, 6]\nsumme = 0\nfor w in werte:\n    summe ___ w\nprint(summe)", "blanks": ["+="], "opts": ["+=", "=", "=="], "why": "Mit = würdest du den alten Wert überschreiben und nur den letzten behalten.", "run": true, "output": "10"}, {"t": "code", "task": "Rechne mit einer for-Schleife die Summe aller Trainingsminuten aus und gib sie aus. Ergebnis: <code>285</code>", "start": "minuten = [60, 90, 45, 90]\nsumme = 0\n\n# for-Schleife: jede Minute zur summe dazurechnen\n\n# danach (nicht eingerückt) summe ausgeben\n", "mustContain": ["for"], "hint": "for m in minuten:  dann eingerückt summe += m. Danach ganz links print(summe).", "expect": "285"}]}, {"id": "while", "title": "Schleifen mit while", "sub": "Wiederholen, solange etwas gilt", "steps": [{"t": "info", "title": "Solange …", "body": "<p><code>while bedingung:</code> wiederholt den eingerückten Teil, <b>solange</b> die Bedingung wahr ist.</p><p>Wichtig: Im Inneren muss sich etwas ändern, damit die Bedingung irgendwann falsch wird. Sonst läuft die Schleife ewig. Die Codekoje stoppt so ein Programm nach 15 Sekunden.</p>", "code": "pegel = 3\nwhile pegel > 0:\n    print(\"Pegel\", pegel)\n    pegel -= 1\nprint(\"Trocken\")"}, {"t": "quiz", "q": "Was fehlt hier, damit die Schleife endet?", "code": "n = 1\nwhile n < 5:\n    print(n)", "opts": ["Ein else", "n muss größer werden, z. B. n += 1", "Ein zweites print"], "a": 1, "why": "n bleibt immer 1, also ist n &lt; 5 immer wahr."}, {"t": "fill", "q": "Zähle in Zweierschritten herunter.", "code": "zahl = 6\nwhile zahl > 0:\n    print(zahl)\n    zahl ___ 2", "blanks": ["-="], "opts": ["-=", "+=", "="], "why": "-= 2 zieht jedes Mal 2 ab. Mit += würde die Zahl wachsen und die Schleife nie enden.", "run": true, "output": "6\n4\n2"}, {"t": "code", "task": "Zähle mit while von 10 in Zweierschritten herunter und gib jede Zahl in einer eigenen Zeile aus: 10, 8, 6, 4, 2.", "start": "zahl = 10\n\n# while zahl > 0:\n#     zahl ausgeben\n#     zahl um 2 verringern\n", "mustContain": ["while"], "hint": "while zahl > 0:  dann eingerückt print(zahl) und zahl -= 2", "expect": "10\n8\n6\n4\n2"}]}, {"id": "func", "title": "Funktionen", "sub": "Eigene Befehle bauen", "steps": [{"t": "info", "title": "Einen eigenen Befehl bauen", "body": "<p>Mit <code>def</code> baust du eine <b>Funktion</b>, also einen eigenen Befehl, den du immer wieder benutzen kannst.</p><p><code>def name(parameter):</code>, darunter eingerückt, was die Funktion tun soll. Der <b>Parameter</b> ist ein Platzhalter für den Wert, den du beim Aufruf mitgibst.</p><p>Die Definition allein tut noch nichts. Erst der <b>Aufruf</b> <code>name(wert)</code> führt sie aus.</p>", "code": "def begruessen(name):\n    print(\"Moin\", name)\n\nbegruessen(\"Anna\")\nbegruessen(\"Ben\")"}, {"t": "fill", "q": "Womit beginnt eine Funktion?", "code": "___ melden(text):\n    print(\"Meldung:\", text)\n\nmelden(\"Pumpe läuft\")", "blanks": ["def"], "opts": ["def", "function", "fn"], "why": "In Python heißt es def, kurz für define.", "run": true, "output": "Meldung: Pumpe läuft"}, {"t": "info", "title": "Ein Ergebnis zurückgeben", "body": "<p>Mit <code>return</code> gibt die Funktion ein Ergebnis an die Stelle zurück, wo sie aufgerufen wurde. Damit kannst du weiterrechnen oder es in eine Variable legen.</p><p><code>print</code> zeigt etwas nur an. <code>return</code> liefert den Wert ab und beendet die Funktion.</p>", "code": "def knoten_zu_kmh(knoten):\n    return knoten * 1.852\n\ntempo = knoten_zu_kmh(5)\nprint(tempo)"}, {"t": "quiz", "q": "Was ist der Unterschied zwischen <code>print</code> und <code>return</code> in einer Funktion?", "opts": ["Kein Unterschied", "return gibt den Wert an den Aufrufer zurück, print zeigt ihn nur an", "print beendet die Funktion"], "a": 1, "why": "Mit return kannst du mit dem Ergebnis weiterrechnen."}, {"t": "code", "task": "Schreibe eine Funktion <code>doppelt(x)</code>, die <code>x * 2</code> zurückgibt. Gib dann <code>doppelt(21)</code> aus.", "start": "def doppelt(x):\n    # hier mit return das Doppelte zurückgeben\n    return 0\n\n# hier doppelt(21) ausgeben\n", "mustContain": ["def doppelt", "return"], "hint": "In der Funktion: return x * 2. Danach ganz links: print(doppelt(21))", "expect": "42"}]}, {"id": "mod", "title": "Module importieren", "sub": "Werkzeugkisten benutzen", "steps": [{"t": "info", "title": "Werkzeugkisten", "body": "<p>Python bringt viele fertige Werkzeugkisten mit, sogenannte <b>Module</b>. Mit <code>import</code> holst du eine in dein Programm.</p><p>Danach benutzt du die Werkzeuge mit Punkt: <code>random.randint(1, 6)</code> heißt: aus der Kiste random das Werkzeug randint, eine Zufallszahl von 1 bis 6.</p>", "code": "import random\nprint(random.randint(1, 6))\nprint(random.choice([\"Palstek\", \"Achtknoten\", \"Kreuzknoten\"]))"}, {"t": "fill", "q": "Hol die Werkzeugkiste math in dein Programm.", "code": "___ math\nprint(math.sqrt(81))", "blanks": ["import"], "opts": ["import", "include", "use"], "why": "import lädt das Modul. math.sqrt ist die Wurzel.", "run": true, "output": "9.0"}, {"t": "info", "title": "Nur ein Werkzeug holen", "body": "<p>Mit <code>from kiste import werkzeug</code> holst du nur ein Werkzeug und kannst es dann <b>ohne</b> Kistennamen benutzen.</p><p>So sieht später dein Pi-Code aus: <code>from gpiozero import OutputDevice</code>. In der Kellerfarm-Etappe ist genau dieses Modul für dich simuliert.</p>", "code": "from random import choice\nprint(choice([\"Kräuter\", \"Pilze\", \"Microgreens\"]))"}, {"t": "quiz", "q": "Nach <code>from random import choice</code>: Wie rufst du es auf?", "opts": ["random.choice(liste)", "choice(liste)", "import.choice(liste)"], "a": 1, "why": "Mit from … import holst du das Werkzeug direkt, der Kistenname fällt weg."}, {"t": "code", "task": "Importiere <code>math</code> und gib die Wurzel aus 144 mit <code>math.sqrt</code> aus. Ergebnis: <code>12.0</code>", "start": "# 1. math importieren\n\n# 2. Wurzel aus 144 ausgeben\n", "mustContain": ["import math", "math.sqrt"], "hint": "import math und dann print(math.sqrt(144))", "expect": "12.0"}]}, {"id": "dict", "title": "Dictionaries", "sub": "Werte mit Namen", "steps": [{"t": "info", "title": "Schlüssel und Wert", "body": "<p>Ein <b>Dictionary</b> ist wie ein Wörterbuch: Zu jedem <b>Schlüssel</b> gehört ein <b>Wert</b>. Es steht in <b>geschweiften Klammern</b>, Schlüssel und Wert trennt ein Doppelpunkt.</p><p>Statt über eine Nummer greifst du über den Schlüssel zu: <code>vokabeln[\"Boot\"]</code>. Mit derselben Schreibweise und <code>=</code> fügst du etwas hinzu.</p>", "code": "vokabeln = {\"Hund\": \"dog\", \"Boot\": \"boat\"}\nprint(vokabeln[\"Boot\"])\nvokabeln[\"Segel\"] = \"sail\"\nprint(len(vokabeln))"}, {"t": "quiz", "q": "Wie liest du den Wert zum Schlüssel <code>\"Anna\"</code> aus <code>stunden</code>?", "opts": ["stunden(\"Anna\")", "stunden[\"Anna\"]", "stunden.Anna"], "a": 1, "why": "Dictionaries liest man mit eckigen Klammern, genau wie Listen, nur mit dem Schlüssel statt der Nummer."}, {"t": "fill", "q": "Lies die Lichtstunden der Pilze aus.", "code": "licht = {\"Pilze\": 12, \"Kräuter\": 14}\nprint(licht[___])", "blanks": ["\"Pilze\""], "opts": ["\"Pilze\"", "Pilze", "0"], "why": "Der Schlüssel ist ein Text, also in Anführungszeichen.", "run": true, "output": "12"}, {"t": "info", "title": "Alle Paare durchgehen", "body": "<p>Mit <code>for name, wert in dict.items():</code> bekommst du in jeder Runde <b>beides</b>: den Schlüssel und den Wert.</p>", "code": "licht = {\"Pilze\": 12, \"Kräuter\": 14}\nfor zone, h in licht.items():\n    print(zone, \"bekommt\", h, \"Stunden Licht\")"}, {"t": "code", "task": "Gib für jedes Mitglied eine Zeile aus, zum Beispiel <code>Anna: 12 h</code>.", "start": "stunden = {\"Anna\": 12, \"Ben\": 7}\n\n# for name, h in stunden.items():\n#     mit f-String ausgeben\n", "anyOrder": true, "mustContain": ["for"], "hint": "for name, h in stunden.items():  dann eingerückt print(f\"{name}: {h} h\")", "expect": "Anna: 12 h\nBen: 7 h"}]}];/*/BASICS*/
+/*FARM*/const FARM = [{"id": "f_mess", "title": "Messwerte", "sub": "Kommazahlen, runden, vergleichen", "steps": [{"t": "info", "title": "Was ein Sensor liefert", "body": "<p>Dein DHT22 liefert Temperatur und Luftfeuchte als <b>Kommazahlen</b> (in Python: <code>float</code>). Für die Anzeige rundest du mit <code>round()</code>. Ein Vergleich wie <code>temp &gt; 18</code> ergibt <code>True</code> oder <code>False</code>. Das ist die Grundlage jeder Regel in deiner Farm.</p>", "code": "temp = 21.37\nfeuchte = 82.94\nprint(type(temp))\nprint(round(temp, 1))\nprint(round(feuchte))\nprint(temp > 18)"}, {"t": "quiz", "q": "Was ergibt <code>feuchte &gt;= 85</code>, wenn <code>feuchte = 85.0</code> ist?", "opts": ["True", "False", "Fehler, weil 85.0 eine Kommazahl ist"], "a": 0, "why": "&gt;= heißt größer oder gleich. 85.0 ist gleich 85, also True."}, {"t": "fill", "q": "Runde auf <b>eine</b> Nachkommastelle.", "code": "temp = 21.456\nprint(round(temp, ___))", "blanks": ["1"], "opts": ["1", "0.1", "10"], "why": "Die zweite Zahl in round() sagt, wie viele Nachkommastellen bleiben.", "run": true, "output": "21.5"}, {"t": "code", "task": "Gib die Werte gerundet aus: Temperatur auf eine Nachkommastelle, Feuchte als ganze Zahl. Genau so: <code>Temperatur: 21.5 °C</code> und <code>Feuchte: 84 %</code>", "start": "temp = 21.456\nfeuchte = 83.71\n", "mustContain": ["round"], "hint": "print(f\"Temperatur: {round(temp, 1)} °C\") und für die Feuchte round(feuchte) ohne zweite Zahl.", "expect": "Temperatur: 21.5 °C\nFeuchte: 84 %"}]}, {"id": "f_gpio", "title": "GPIO und Relais", "sub": "Lampe, Lüfter und Pumpe schalten", "steps": [{"t": "info", "title": "Strom per Code schalten", "body": "<p>Der Raspberry Pi hat <b>GPIO-Pins</b>. Ein Pin kann nur 3,3 V und ganz wenig Strom liefern. Deshalb schaltet er ein <b>Relais</b> oder ein MOSFET-Modul, und das schaltet dann Grow-Light, Lüfter oder Pumpe.</p><p>In Python nimmst du dafür die Bibliothek <code>gpiozero</code>. In der Codekoje ist sie simuliert. Der Code ist aber derselbe wie auf dem echten Pi.</p>", "code": "from gpiozero import OutputDevice\n\nlicht = OutputDevice(17)   # Relais an GPIO 17\nlicht.on()\nprint(licht.is_active)\nlicht.off()\nprint(licht.value)"}, {"t": "fill", "q": "Schalte das Licht ein.", "code": "from gpiozero import OutputDevice\n\nlicht = OutputDevice(17)\nlicht.___()\nprint(licht.is_active)", "blanks": ["on"], "opts": ["on", "an", "start"], "why": "gpiozero spricht Englisch: on() schaltet ein, off() aus. is_active sagt dir, ob das Gerät gerade an ist.", "run": true, "output": "True"}, {"t": "quiz", "q": "Viele billige Relais-Module schalten ein, wenn der Pin auf LOW (0 V) geht. Wie legst du so ein Relais an?", "opts": ["OutputDevice(17, active_high=False)", "OutputDevice(17, active_low=True)", "OutputDevice(-17)"], "a": 0, "why": "Mit active_high=False dreht gpiozero die Logik um. on() bedeutet dann trotzdem „Gerät an“."}, {"t": "quiz", "q": "Wie schaltest du eine 12-V-Pumpe mit dem Pi?", "opts": ["Direkt an einen GPIO-Pin anschließen", "Über ein Relais oder MOSFET-Modul mit eigenem 12-V-Netzteil", "Über den 5-V-Pin des Pi"], "a": 1, "why": "Der Pi steuert nur das Relais oder den MOSFET. Den Strom für die Pumpe liefert ein eigenes Netzteil."}, {"t": "code", "task": "Lege einen Lüfter an GPIO 27 an (Name: <code>luefter</code>). Schalte ihn ein und gib <code>luefter.is_active</code> aus. Schalte ihn dann aus und gib es noch einmal aus.", "start": "from gpiozero import OutputDevice\n\n", "mustContain": ["OutputDevice(27", ".on()", ".off()"], "hint": "luefter = OutputDevice(27), dann luefter.on() und print(luefter.is_active).", "expect": "True\nFalse"}]}, {"id": "f_sensor", "title": "Sensor auslesen", "sub": "DHT22 und Fehlerbehandlung mit try", "steps": [{"t": "info", "title": "Der DHT22 ist manchmal zickig", "body": "<p>Der DHT22 hängt an GPIO 4. Du liest ihn mit <code>adafruit_dht</code> aus. Ab und zu klappt eine Messung nicht, dann wirft die Bibliothek einen <code>RuntimeError</code>. Ohne Absicherung würde deine ganze Steuerung abstürzen.</p><p>Mit <code>try</code> und <code>except</code> fängst du den Fehler ab und machst einfach weiter. Der simulierte Sensor hier liefert feste Beispielwerte, und die 4. Messung schlägt immer fehl.</p>", "code": "import adafruit_dht\nimport board\n\nsensor = adafruit_dht.DHT22(board.D4)\ntry:\n    t = sensor.temperature\n    h = sensor.humidity\n    print(t, \"°C\", h, \"%\")\nexcept RuntimeError as fehler:\n    print(\"Messfehler:\", fehler)"}, {"t": "quiz", "q": "Was passiert, wenn im <code>try</code>-Block ein Fehler auftritt?", "opts": ["Das Programm bricht sofort ab", "Python springt in den passenden except-Block und macht danach weiter", "Der Fehler wird ignoriert und die Zeile trotzdem ausgeführt"], "a": 1, "why": "Genau dafür ist try/except da. Die Steuerung läuft weiter, und beim nächsten Durchgang wird neu gemessen."}, {"t": "fill", "q": "Fang den Sensorfehler ab.", "code": "import adafruit_dht\nimport board\n\nsensor = adafruit_dht.DHT22(board.D4)\nfor i in range(4):\n    try:\n        print(sensor.temperature)\n    except ___:\n        print(\"Messfehler\")", "blanks": ["RuntimeError"], "opts": ["RuntimeError", "Fehler", "error"], "why": "Hinter except steht der Name des Fehlers, den du abfangen willst. Der DHT-Sensor meldet seine Aussetzer als RuntimeError.", "run": true, "output": "21.4\n21.6\n21.5\nMessfehler"}, {"t": "code", "task": "Lies den Sensor 5-mal in einer <code>for</code>-Schleife aus. Gib bei Erfolg zum Beispiel <code>21.4 °C / 71.2 %</code> aus, bei einem Fehler nur <code>Messfehler</code>.", "start": "import adafruit_dht\nimport board\n\nsensor = adafruit_dht.DHT22(board.D4)\n\n", "mustContain": ["for", "try", "except"], "hint": "for i in range(5): darin try: t = sensor.temperature, h = sensor.humidity, print(f\"{t} °C / {h} %\") und except RuntimeError: print(\"Messfehler\")", "expect": "21.4 °C / 71.2 %\n21.6 °C / 74.8 %\n21.5 °C / 79.5 %\nMessfehler\n21.9 °C / 86.3 %"}]}, {"id": "f_schwelle", "title": "Schwellenwerte", "sub": "Die erste Regel: Lüfter bei hoher Feuchte", "steps": [{"t": "info", "title": "Wenn Feuchte über X, dann Lüfter an", "body": "<p>Deine erste Regel packst du in eine Funktion. Der Parameter <code>grenze=85</code> hat einen <b>Standardwert</b>. Du kannst ihn weglassen oder für jede Zone anders setzen.</p>", "code": "def luefter_noetig(feuchte, grenze=85):\n    return feuchte > grenze\n\nprint(luefter_noetig(88))\nprint(luefter_noetig(80))\nprint(luefter_noetig(90, grenze=95))"}, {"t": "fill", "q": "Gib dem Parameter <code>grenze</code> den Standardwert 85.", "code": "def luefter_noetig(feuchte, grenze___85):\n    return feuchte > grenze\n\nprint(luefter_noetig(90))", "blanks": ["="], "opts": ["=", "==", ":"], "why": "Ein Standardwert wird mit einfachem = in die Klammer geschrieben. Lässt du ihn beim Aufruf weg, nimmt Python die 85.", "run": true, "output": "True"}, {"t": "code", "task": "Geh die Messreihe durch und gib für jeden Wert die Feuchte und <code>AN</code> oder <code>AUS</code> aus, zum Beispiel <code>84 AUS</code>. Grenze: über 85 % ist AN.", "start": "messreihe = [84, 86, 84, 86]\n", "mustContain": ["for", "if"], "hint": "for rh in messreihe: und darin if rh > 85: print(rh, \"AN\") else: print(rh, \"AUS\")", "expect": "84 AUS\n86 AN\n84 AUS\n86 AN"}, {"t": "quiz", "q": "Schau dir dein Ergebnis an. Was ist an dieser Regel im echten Keller ungünstig?", "opts": ["Nichts, sie ist perfekt", "Schwankt die Feuchte um 85 %, klackt das Relais ständig an und aus", "Der Lüfter geht nie an"], "a": 1, "why": "Das nennt man Flattern. Es verschleißt Relais und Lüfter. Die Lösung heißt Hysterese, und die kommt in der nächsten Lektion."}]}, {"id": "f_hyst", "title": "Hysterese", "sub": "Zwei Grenzen, ein Gedächtnis", "steps": [{"t": "info", "title": "Ein Ein-Wert und ein Aus-Wert", "body": "<p>Bei der Hysterese gibt es zwei Grenzen. Über 85 % geht der Lüfter an. Er geht erst wieder aus, wenn die Feuchte unter 75 % fällt. Dazwischen <b>bleibt der alte Zustand</b>. Deshalb muss sich das Programm den Zustand merken.</p>", "code": "luefter_an = False\nfor rh in [80, 86, 84, 77, 74]:\n    if rh > 85:\n        luefter_an = True\n    elif rh < 75:\n        luefter_an = False\n    # dazwischen bleibt alles, wie es ist\n    print(rh, luefter_an)"}, {"t": "quiz", "q": "Ein- bei 85 %, Aus bei 75 %. Der Lüfter läuft gerade, die Feuchte liegt bei 80 %. Was passiert?", "opts": ["Lüfter geht aus", "Lüfter läuft weiter", "Lüfter geht kurz aus und wieder an"], "a": 1, "why": "80 % liegt zwischen den Grenzen, also bleibt der Zustand, wie er ist."}, {"t": "fill", "q": "Ergänze die Aus-Bedingung der Hysterese.", "code": "luefter_an = True\nrh = 72\nif rh > 85:\n    luefter_an = True\nelif rh ___ 75:\n    luefter_an = False\nprint(luefter_an)", "blanks": ["<"], "opts": ["<", ">", "=="], "why": "Aus geht der Lüfter erst, wenn die Feuchte unter die untere Grenze fällt.", "run": true, "output": "False"}, {"t": "code", "task": "Schreib die Funktion <code>hysterese(rh, an, ein=85, aus=75)</code>. Sie gibt den <b>neuen</b> Zustand zurück: über <code>ein</code> True, unter <code>aus</code> False, sonst den alten Zustand <code>an</code>.", "start": "def hysterese(rh, an, ein=85, aus=75):\n    # gib den neuen Zustand zurück (True oder False)\n    return an\n\nan = False\nfor rh in [80, 86, 82, 78, 74, 79, 87]:\n    an = hysterese(rh, an)\n    print(rh, \"AN\" if an else \"AUS\")\n", "mustContain": ["def hysterese"], "hint": "if rh > ein: return True, dann if rh < aus: return False, und ganz am Ende return an.", "expect": "80 AUS\n86 AN\n82 AN\n78 AN\n74 AUS\n79 AUS\n87 AN"}, {"t": "quiz", "q": "Heizung: unter 18 °C an, über 20 °C aus. Es sind 19 °C und die Heizung ist aus. Was passiert?", "opts": ["Heizung geht an", "Heizung bleibt aus", "Heizung geht an und gleich wieder aus"], "a": 1, "why": "Gleiches Prinzip, nur andersherum: 19 °C liegt zwischen 18 und 20, also bleibt der Zustand."}]}, {"id": "f_licht", "title": "Lichtzyklus", "sub": "16 Stunden an, 8 aus, auch über Mitternacht", "steps": [{"t": "info", "title": "Rechnen mit der Uhrzeit", "body": "<p>Licht ab 6 Uhr für 16 Stunden heißt: an von 6 bis 21:59 Uhr. Knifflig wird es, wenn der Zyklus über Mitternacht geht. Der Trick ist der Rest-Operator <code>%</code>: <code>(stunde - start) % 24</code> zählt, wie viele Stunden seit dem Einschalten vergangen sind.</p><p>Auf dem Pi holst du die Stunde mit <code>datetime.now().hour</code>. Hier übst du mit festen Stunden.</p>", "code": "start = 6\ndauer = 16\nfor stunde in [5, 6, 13, 21, 22]:\n    an = (stunde - start) % 24 < dauer\n    print(stunde, \"Uhr:\", \"AN\" if an else \"AUS\")"}, {"t": "quiz", "q": "Was ergibt <code>(2 - 20) % 24</code> in Python?", "opts": ["-18", "6", "18"], "a": 1, "why": "In Python ist das Ergebnis von % mit positivem Teiler nie negativ. -18 + 24 = 6, also ist es 6 Stunden nach 20 Uhr."}, {"t": "code", "task": "Schreib <code>licht_an(stunde, start, dauer)</code>, die True oder False zurückgibt. Die Pilz-Zone hat Licht ab 20 Uhr für 12 Stunden, also über Mitternacht.", "start": "def licht_an(stunde, start, dauer):\n    return False\n\nfor stunde in [19, 20, 23, 0, 7, 8]:\n    print(stunde, \"AN\" if licht_an(stunde, 20, 12) else \"AUS\")\n", "mustContain": ["def licht_an", "%"], "hint": "return (stunde - start) % 24 < dauer", "expect": "19 AUS\n20 AN\n23 AN\n0 AN\n7 AN\n8 AUS"}]}, {"id": "f_zonen", "title": "Zonen", "sub": "Einstellungen pro Etage", "steps": [{"t": "info", "title": "Jede Etage ihr eigenes Klima", "body": "<p>Microgreens, Kräuter, Pilze und Radieschen brauchen verschiedene Werte. Statt alles fest in den Code zu schreiben, legst du eine <b>Liste von Dictionaries</b> an. Eine neue Etage ist dann nur eine neue Zeile.</p>", "code": "zonen = [\n    {\"name\": \"Microgreens\", \"licht\": 16, \"rh_max\": 70},\n    {\"name\": \"Pilze\", \"licht\": 12, \"rh_max\": 90},\n]\nfor z in zonen:\n    print(z[\"name\"], \"→\", z[\"licht\"], \"h Licht\")"}, {"t": "quiz", "q": "Wie bekommst du die Lichtstunden der Kräuter, wenn sie das zweite Element in <code>zonen</code> sind?", "opts": ["zonen[\"Kräuter\"][\"licht\"]", "zonen[1][\"licht\"]", "zonen[2].licht"], "a": 1, "why": "Die Liste zählt ab 0, das zweite Element ist also [1]. Danach greifst du mit [\"licht\"] auf das Dictionary zu."}, {"t": "fill", "q": "Gib den Namen jeder Zone aus.", "code": "zonen = [{\"name\": \"Pilze\", \"licht\": 12}, {\"name\": \"Kräuter\", \"licht\": 14}]\nfor z in zonen:\n    print(z[___])", "blanks": ["\"name\""], "opts": ["\"name\"", "name", "0"], "why": "Jedes z ist ein Dictionary, also brauchst du den Schlüssel in Anführungszeichen.", "run": true, "output": "Pilze\nKräuter"}, {"t": "code", "task": "Gib für jede Zone eine Zeile aus, zum Beispiel <code>Microgreens: 16 h Licht, Lüfter ab 70 %</code>.", "start": "zonen = [\n    {\"name\": \"Microgreens\", \"licht\": 16, \"rh_max\": 70},\n    {\"name\": \"Kräuter\", \"licht\": 14, \"rh_max\": 65},\n    {\"name\": \"Pilze\", \"licht\": 12, \"rh_max\": 90},\n    {\"name\": \"Radieschen\", \"licht\": 14, \"rh_max\": 70},\n]\n", "mustContain": ["for"], "hint": "for z in zonen: print(z[\"name\"] + \":\", z[\"licht\"], \"h Licht, Lüfter ab\", z[\"rh_max\"], \"%\")", "expect": "Microgreens: 16 h Licht, Lüfter ab 70 %\nKräuter: 14 h Licht, Lüfter ab 65 %\nPilze: 12 h Licht, Lüfter ab 90 %\nRadieschen: 14 h Licht, Lüfter ab 70 %"}]}, {"id": "f_klasse", "title": "Eine Zone als Klasse", "sub": "Daten und Verhalten zusammenpacken", "steps": [{"t": "info", "title": "class", "body": "<p>Eine <b>Klasse</b> ist ein Bauplan. Jede Etage wird ein Objekt mit eigenen Werten (<code>self.name</code>, <code>self.luefter_an</code>) und eigenen Methoden. <code>__init__</code> läuft beim Anlegen. <code>self</code> ist das Objekt selbst.</p>", "code": "class Zone:\n    def __init__(self, name, rh_max):\n        self.name = name\n        self.rh_max = rh_max\n        self.luefter_an = False\n\n    def beschreibung(self):\n        return self.name + \" (Lüfter ab \" + str(self.rh_max) + \" %)\"\n\npilze = Zone(\"Pilze\", 90)\nprint(pilze.beschreibung())\nprint(pilze.luefter_an)"}, {"t": "info", "title": "__init__ und self erklärt", "body": "<p><code>__init__</code> (mit je zwei Unterstrichen vorn und hinten) läuft automatisch, wenn du ein neues Objekt anlegst: <code>Zone(\"Pilze\", 90)</code>.</p><p><code>self</code> ist immer der erste Parameter jeder Methode. Er steht für <b>das Objekt selbst</b>. <code>self.name = name</code> heißt: Speichere den mitgegebenen Namen in diesem Objekt.</p><p>Beim Aufruf schreibst du self nicht mit. Python setzt es selbst ein: <code>pilze.beschreibung()</code>.</p>"}, {"t": "quiz", "q": "Du legst <code>a = Zone(\"Pilze\", 90)</code> und <code>b = Zone(\"Kräuter\", 65)</code> an. Was gilt?", "opts": ["Beide teilen sich luefter_an", "Jedes Objekt hat sein eigenes luefter_an", "Zone darf nur einmal benutzt werden"], "a": 1, "why": "Jedes Objekt hat seine eigenen Werte. Genau deshalb passt eine Klasse so gut zu deinen Etagen."}, {"t": "code", "task": "Ergänze die Methode <code>regeln(self, rh)</code> mit Hysterese: über <code>rh_max</code> Lüfter an, unter <code>rh_max - 10</code> aus, dazwischen bleibt alles. Speichere das Ergebnis in <code>self.luefter_an</code>.", "start": "class Zone:\n    def __init__(self, name, rh_max):\n        self.name = name\n        self.rh_max = rh_max\n        self.luefter_an = False\n\n    def regeln(self, rh):\n        pass\n\nkraeuter = Zone(\"Kräuter\", 65)\nfor rh in [60, 67, 62, 54, 58]:\n    kraeuter.regeln(rh)\n    print(rh, kraeuter.luefter_an)\n", "mustContain": ["def regeln", "self.luefter_an"], "hint": "if rh > self.rh_max: self.luefter_an = True, dann elif rh < self.rh_max - 10: self.luefter_an = False", "expect": "60 False\n67 True\n62 True\n54 False\n58 False"}, {"t": "fill", "q": "Was ist immer der erste Parameter einer Methode?", "code": "class Zone:\n    def __init__(___, name):\n        self.name = name\n\nz = Zone(\"Radieschen\")\nprint(z.name)", "blanks": ["self"], "opts": ["self", "this", "zone"], "why": "In Python heißt er self, und er steht immer an erster Stelle.", "run": true, "output": "Radieschen"}]}, {"id": "f_wasser", "title": "Bewässerung", "sub": "Bodenfeuchte umrechnen und gießen", "steps": [{"t": "info", "title": "Vom Rohwert zum Prozentwert", "body": "<p>Ein kapazitiver Bodenfeuchte-Sensor liefert eine <b>Spannung</b>, also einen analogen Wert. Der Pi hat keine analogen Eingänge. Deshalb hängt ein Wandler wie der <b>ADS1115</b> dazwischen, über I2C. Der liefert Rohwerte, etwa 26000 in trockener Luft und 12000 in Wasser. Daraus rechnest du Prozent aus. Die beiden Werte misst du für deinen Sensor einmal selbst.</p>", "code": "trocken = 26000\nnass = 12000\nroh = 20400\nprozent = (trocken - roh) / (trocken - nass) * 100\nprint(round(prozent), \"%\")"}, {"t": "quiz", "q": "Warum brauchst du für den Bodenfeuchte-Sensor einen ADS1115?", "opts": ["Weil der Pi keine analogen Eingänge hat", "Weil der Sensor 230 V braucht", "Damit die Pumpe schneller läuft"], "a": 0, "why": "Der Pi kennt an seinen Pins nur an oder aus. Der ADS1115 übersetzt die Spannung in eine Zahl."}, {"t": "info", "title": "Werte begrenzen mit max und min", "body": "<p>Ein Sensor liefert manchmal Werte etwas außerhalb deiner Kalibrierung, und dann käme -7 % oder 107 % heraus. Das begrenzt du so:</p><p><code>max(0, wert)</code> nimmt den größeren der beiden Werte, also nie unter 0.<br><code>min(100, wert)</code> nimmt den kleineren, also nie über 100.</p><p>Zusammen: <code>max(0, min(100, wert))</code>.</p>", "code": "for wert in [-7, 50, 107]:\n    print(wert, \"→\", max(0, min(100, wert)))"}, {"t": "code", "task": "Schreib <code>feuchte_prozent(roh)</code>: rechne um, runde auf eine ganze Zahl und begrenze das Ergebnis auf 0 bis 100. Unter 35 % soll <code>gießen</code> erscheinen, sonst <code>ok</code>.", "start": "def feuchte_prozent(roh, trocken=26000, nass=12000):\n    return 0\n\nfor roh in [19000, 22500, 27000, 11000]:\n    p = feuchte_prozent(roh)\n    print(p, \"%\", \"gießen\" if p < 35 else \"ok\")\n", "mustContain": ["def feuchte_prozent"], "hint": "p = round((trocken - roh) / (trocken - nass) * 100), dann return max(0, min(100, p))", "expect": "50 % ok\n25 % gießen\n0 % gießen\n100 % ok"}, {"t": "quiz", "q": "Die Pumpe soll beim Gießen 5 Sekunden laufen. Was ist dabei am wichtigsten?", "opts": ["Dass sie danach sicher wieder ausgeht, auch wenn ein Fehler passiert", "Dass sie möglichst oft läuft", "Dass die Pumpe an GPIO 1 hängt"], "a": 0, "why": "Eine Pumpe, die nicht mehr ausgeht, setzt den Keller unter Wasser. Wie du das absicherst, lernst du in der nächsten Lektion."}]}, {"id": "f_schleife", "title": "Die Regelschleife", "sub": "Messen, regeln, warten und sicher abschalten", "steps": [{"t": "info", "title": "Das Herz der Steuerung", "body": "<p>Auf dem Pi läuft eine Endlosschleife: messen, regeln, protokollieren, eine Minute warten, und das immer wieder. Mit <code>try</code> und <code>finally</code> stellst du sicher, dass beim Beenden oder bei einem Fehler alles abgeschaltet wird. <code>finally</code> läuft <b>immer</b>.</p><pre class=\"code\">while True:\n    messen()\n    regeln()\n    time.sleep(60)</pre><p>Hier eine kurze Version zum Ausprobieren:</p>", "code": "import time\nfrom gpiozero import OutputDevice\n\npumpe = OutputDevice(22)\ntry:\n    for runde in range(3):\n        pumpe.on()\n        print(\"Runde\", runde, \"– Pumpe läuft\")\n        time.sleep(0.5)\n        pumpe.off()\nfinally:\n    pumpe.off()\n    print(\"Alles aus. Pumpe aktiv?\", pumpe.is_active)"}, {"t": "quiz", "q": "Wann wird der <code>finally</code>-Block ausgeführt?", "opts": ["Nur wenn ein Fehler passiert", "Immer, auch bei Fehler oder Abbruch", "Nur wenn kein Fehler passiert"], "a": 1, "why": "Deshalb gehört das Abschalten aller Aktoren dorthin, vor allem das der Pumpe."}, {"t": "info", "title": "Umschaltungen zählen", "body": "<p>Um zu zählen, wie oft der Lüfter <b>eingeschaltet</b> wird, merkst du dir vor dem Regeln den alten Zustand:</p><p><code>vorher = luefter</code><br><code>luefter = hysterese(…)</code><br><code>if luefter and not vorher:</code> bedeutet: jetzt an, vorher aus. Genau dann zählst du hoch.</p>", "code": "zustaende = [False, True, True, False, True]\nvorher = False\neinschaltungen = 0\nfor jetzt in zustaende:\n    if jetzt and not vorher:\n        einschaltungen += 1\n    vorher = jetzt\nprint(einschaltungen)"}, {"t": "code", "task": "Simuliere einen ganzen Tag (Stunde 0 bis 23). Licht: ab 6 Uhr für 16 Stunden. Lüfter: Hysterese 85/75. Zähle die Lichtstunden und wie oft der Lüfter <b>eingeschaltet</b> wird (von aus nach an). Ausgabe: <code>Licht: … h</code> und <code>Lüfter eingeschaltet: …-mal</code>.", "start": "def licht_an(stunde, start, dauer):\n    return (stunde - start) % 24 < dauer\n\ndef hysterese(rh, an, ein=85, aus=75):\n    if rh > ein:\n        return True\n    if rh < aus:\n        return False\n    return an\n\nfeuchte = [78, 80, 83, 86, 84, 79, 76, 74, 72, 75, 79, 83, 87, 88, 84, 80, 77, 74, 73, 76, 82, 86, 85, 79]\n\nlicht_stunden = 0\neinschaltungen = 0\nluefter = False\n\n# deine Schleife über range(24)\n\n", "mustContain": ["range(24)"], "hint": "Merke dir vor dem Aufruf von hysterese den alten Zustand: vorher = luefter. Wenn danach luefter True ist und vorher False war, dann einschaltungen += 1.", "expect": "Licht: 16 h\nLüfter eingeschaltet: 3-mal"}]}, {"id": "f_log", "title": "Daten loggen", "sub": "Messwerte speichern und auswerten", "steps": [{"t": "info", "title": "Was nicht gespeichert ist, ist weg", "body": "<p>Für Diagramme und zur Fehlersuche speicherst du jede Messung. Eine Messung ist ein <b>Tupel</b> <code>(zeit, temp, rh)</code>. Mit einer <b>List Comprehension</b> holst du eine Spalte heraus: <code>[m[1] for m in messungen]</code>.</p>", "code": "messungen = [(\"06:00\", 20.8, 74.1), (\"07:00\", 21.3, 79.6), (\"08:00\", 21.9, 83.0)]\nprint(\"zeit;temp;rh\")\nfor zeit, t, rh in messungen:\n    print(f\"{zeit};{t};{rh}\")\ntemps = [m[1] for m in messungen]\nprint(\"höchste Temperatur:\", max(temps))"}, {"t": "fill", "q": "Hol alle Feuchtewerte (Platz 2 im Tupel) aus den Messungen.", "code": "messungen = [(\"06:00\", 20.8, 74.1), (\"07:00\", 21.3, 79.6)]\nfeuchten = [m[___] for m in messungen]\nprint(feuchten)", "blanks": ["2"], "opts": ["2", "1", "3"], "why": "Ein Tupel zählt wie eine Liste ab 0: Platz 0 ist die Zeit, Platz 1 die Temperatur, Platz 2 die Feuchte.", "run": true, "output": "[74.1, 79.6]"}, {"t": "info", "title": "Auf dem Pi: SQLite", "body": "<p>Auf dem echten Pi schreibst du die Werte in eine <b>SQLite</b>-Datenbank. Die ist in Python schon eingebaut. Grafana oder Node-RED zeichnen daraus später Diagramme. Diesen Code kannst du hier im Browser nicht ausführen, er ist für den Pi gedacht:</p><pre class=\"code\">import sqlite3\n\ndb = sqlite3.connect(\"farm.db\")\ndb.execute(\"CREATE TABLE IF NOT EXISTS messung \"\n           \"(zeit TEXT, zone TEXT, temp REAL, rh REAL)\")\ndb.execute(\"INSERT INTO messung VALUES (datetime('now'), ?, ?, ?)\",\n           (\"Microgreens\", 21.4, 71.2))\ndb.commit()</pre>"}, {"t": "quiz", "q": "Wofür nimmst du Grafana in deinem Projekt?", "opts": ["Um die Relais zu schalten", "Um die gespeicherten Messwerte als Diagramme anzuzeigen", "Um den Sensor auszulesen"], "a": 1, "why": "Grafana liest die Datenbank und zeigt Verläufe, zum Beispiel die Feuchte der Pilz-Zone über eine Woche."}, {"t": "code", "task": "Erstelle einen Tagesbericht: <code>Ø Temperatur: … °C</code> (auf eine Nachkommastelle gerundet), <code>Max. Feuchte: … %</code> und <code>Messungen: …</code>.", "start": "messungen = [\n    (\"06:00\", 20.8, 74.1),\n    (\"09:00\", 21.6, 79.6),\n    (\"12:00\", 22.4, 83.0),\n    (\"15:00\", 22.9, 88.4),\n    (\"18:00\", 21.7, 81.2),\n    (\"21:00\", 20.9, 76.5),\n]\n", "mustContain": ["for"], "hint": "temps = [m[1] for m in messungen] und rhs = [m[2] for m in messungen]. Der Durchschnitt ist sum(temps) / len(temps).", "expect": "Ø Temperatur: 21.7 °C\nMax. Feuchte: 88.4 %\nMessungen: 6"}]}, {"id": "f_pi", "title": "Ab auf den echten Pi", "sub": "Verkabelung, Sicherheit, Autostart", "steps": [{"t": "info", "title": "Verkabelung und Sicherheit", "body": "<p><b>DHT22</b>: Plus an 3,3 V, Minus an GND, Daten an GPIO 4. Module mit Platine haben den nötigen Pull-up-Widerstand schon drauf.</p><p><b>Relais-Modul</b>: wird über GPIO 17, 27, 22 … angesteuert. Viele schalten bei LOW, dann brauchst du <code>active_high=False</code>.</p><p><b>12-V-Geräte</b> wie Lüfter und Pumpe bekommen ein eigenes Netzteil. GND von Netzteil und Pi verbindest du, wenn du MOSFET-Module nutzt.</p><p><b>Sicherheit im feuchten Keller:</b> Bleib möglichst bei 12 V. Arbeiten an 230 V gehören in die Hände einer Elektrofachkraft. Setz die Elektronik <b>über</b> Wasserbehälter und Pumpe und nimm eine Steckdose mit FI-Schutzschalter.</p>"}, {"t": "quiz", "q": "Wo gehört die Elektronik in deinem Regal hin?", "opts": ["Unter den Wassertank, da ist Platz", "Oberhalb von Wassertank und Pumpe, mit Spritzschutz", "Direkt in die Pilzbox, wegen der Wärme"], "a": 1, "why": "Wasser läuft nach unten. Elektronik gehört deshalb nach oben und geschützt, zumal die Pilzbox fast 90 % Luftfeuchte hat."}, {"t": "info", "title": "Programm installieren und automatisch starten", "body": "<p>Auf dem Pi installierst du die echten Bibliotheken in einer eigenen Umgebung:</p><pre class=\"code\">python3 -m venv ~/farm-venv\nsource ~/farm-venv/bin/activate\npip install gpiozero lgpio adafruit-circuitpython-dht adafruit-circuitpython-ads1x15</pre><p>Damit die Regelschleife beim Booten startet und nach einem Absturz neu anläuft, legst du einen <b>systemd-Dienst</b> an, zum Beispiel <code>/etc/systemd/system/kellerfarm.service</code>:</p><pre class=\"code\">[Unit]\nDescription=Kellerfarm\nAfter=network.target\n\n[Service]\nExecStart=/home/pi/farm-venv/bin/python /home/pi/farm/farm.py\nRestart=always\n\n[Install]\nWantedBy=multi-user.target</pre><p>Aktivieren mit <code>sudo systemctl enable --now kellerfarm</code>.</p>"}, {"t": "quiz", "q": "Warum nimmst du für die Regelschleife systemd statt cron?", "opts": ["cron kann kein Python", "systemd startet das Programm beim Booten und nach einem Absturz automatisch neu", "systemd ist schneller beim Messen"], "a": 1, "why": "Cron passt für einzelne Aufgaben zu festen Zeiten. Eine Schleife, die immer laufen soll, gehört in einen Dienst mit Restart=always."}]}];/*/FARM*/
+/*VOCAB*/const VOCAB = {"print": {"calls": ["print"]}, "vars": {}, "math": {"ops": ["// % **"]}, "str": {"calls": ["str", "len"], "feat": ["fstring"]}, "bool": {"kw": ["True", "False", "and", "or", "not"]}, "if": {"kw": ["if", "elif", "else"]}, "kurz": {"feat": ["+=", "-=", "x if c else y"]}, "list": {"methods": ["append"], "feat": ["Listen, Index, [-1]"]}, "for": {"kw": ["for", "in"], "calls": ["range"]}, "while": {"kw": ["while"]}, "func": {"kw": ["def", "return"]}, "mod": {"kw": ["import", "from"], "calls": ["random.randint", "random.choice", "math.sqrt", "choice", "randint", "sqrt"]}, "dict": {"methods": ["items"], "feat": ["Dictionaries"]}, "f_mess": {"calls": ["round", "type", "float", "int"]}, "f_gpio": {"calls": ["OutputDevice"], "methods": ["on", "off", "toggle"]}, "f_sensor": {"kw": ["try", "except", "as"], "calls": ["DHT22", "adafruit_dht.DHT22"]}, "f_schwelle": {"feat": ["Standardwerte für Parameter"]}, "f_hyst": {}, "f_licht": {}, "f_zonen": {"feat": ["Listen von Dictionaries"]}, "f_klasse": {"kw": ["class", "pass"], "feat": ["Klassen, self, __init__"]}, "f_wasser": {"calls": ["max", "min"]}, "f_schleife": {"kw": ["finally"], "calls": ["time.sleep", "sleep"]}, "f_log": {"calls": ["sum", "max", "min"], "feat": ["Tupel", "List Comprehension"]}, "f_pi": {}};/*/VOCAB*/
+/*MOCKS*/const MOCKS = {"gpiozero": "# Simuliertes gpiozero (Codekoje). Auf dem echten Pi ist es die echte Bibliothek.\nclass OutputDevice:\n    def __init__(self, pin, active_high=True, initial_value=False):\n        self.pin = pin\n        self.active_high = active_high\n        self._an = bool(initial_value)\n    def on(self):\n        self._an = True\n    def off(self):\n        self._an = False\n    def toggle(self):\n        self._an = not self._an\n    def close(self):\n        self._an = False\n    def _get_value(self):\n        if self._an:\n            return 1\n        return 0\n    def _set_value(self, v):\n        self._an = bool(v)\n    value = property(_get_value, _set_value)\n    def _get_active(self):\n        return self._an\n    is_active = property(_get_active)\n    def __repr__(self):\n        if self._an:\n            return \"<OutputDevice GPIO\" + str(self.pin) + \" an>\"\n        return \"<OutputDevice GPIO\" + str(self.pin) + \" aus>\"\n\nLED = OutputDevice\nDigitalOutputDevice = OutputDevice\n", "board": "# Simuliertes board-Modul (Codekoje)\nclass Pin:\n    def __init__(self, n):\n        self.id = n\n    def __repr__(self):\n        return \"board.D\" + str(self.id)\n\nD2 = Pin(2)\nD3 = Pin(3)\nD4 = Pin(4)\nD5 = Pin(5)\nD6 = Pin(6)\nD12 = Pin(12)\nD13 = Pin(13)\nD16 = Pin(16)\nD17 = Pin(17)\nD18 = Pin(18)\nD22 = Pin(22)\nD23 = Pin(23)\nD24 = Pin(24)\nD25 = Pin(25)\nD26 = Pin(26)\nD27 = Pin(27)\nSDA = D2\nSCL = D3\n", "adafruit_dht": "# Simulierter DHT22 (Codekoje). Liefert feste Beispielwerte, die 4. Messung schlaegt fehl.\n_T = [21.4, 21.6, 21.5, None, 21.9, 22.1, 22.0, 21.8]\n_H = [71.2, 74.8, 79.5, None, 86.3, 88.0, 83.1, 76.4]\n\nclass DHT22:\n    def __init__(self, pin, use_pulseio=True):\n        self.pin = pin\n        self._i = -1\n    def _messen(self):\n        self._i = (self._i + 1) % len(_T)\n        if _T[self._i] is None:\n            raise RuntimeError(\"Checksum did not validate. Try again.\")\n    def _get_temp(self):\n        self._messen()\n        return _T[self._i]\n    temperature = property(_get_temp)\n    def _get_hum(self):\n        if self._i < 0:\n            self._messen()\n        if _H[self._i] is None:\n            raise RuntimeError(\"Checksum did not validate. Try again.\")\n        return _H[self._i]\n    humidity = property(_get_hum)\n    def exit(self):\n        pass\n\nDHT11 = DHT22\n"};/*/MOCKS*/
+const ETAPPEN=[
+  {key:"basis",title:"Etappe 1 · Python-Grundlagen",note:"Das Handwerkszeug: Ausgaben, Variablen, Entscheidungen, Schleifen, Funktionen."},
+  {key:"farm",title:"Etappe 2 · Kellerfarm",note:"Alles, was dein Raspberry Pi für die Indoor-Farm können muss. Relais und Sensoren sind hier simuliert, der Code ist derselbe wie auf dem echten Pi."}
+];
+const ALL=[...LESSONS.map(l=>Object.assign({kurs:"basis"},l)),...FARM.map(l=>Object.assign({kurs:"farm"},l))];
+
+/* ---------- Speicher (nur dieser Browser) ---------- */
+const KEY="codekoje.v1";
+let S={done:{},xp:0,streak:0,last:"",mentor:null};
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(S,JSON.parse(raw))}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function today(){return new Date().toISOString().slice(0,10)}
+function touchStreak(){const t=today();if(S.last===t)return;const y=new Date(Date.now()-864e5).toISOString().slice(0,10);S.streak=S.last===y?S.streak+1:1;S.last=t}
+function addXP(n){S.xp+=n;touchStreak();save();renderStats()}
+function renderStats(){$("#xp").textContent=S.xp;$("#streak").textContent=S.last&&(S.last===today()||S.last===new Date(Date.now()-864e5).toISOString().slice(0,10))?S.streak:0}
+
+/* ---------- Helfer ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function h(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content.firstElementChild}
+function md(s){ // kleines Markdown für Mentor-Antworten
+  const parts=String(s).split(/```(?:\w+)?\n?([\s\S]*?)```/g);let out="";
+  parts.forEach((p,i)=>{if(i%2){out+="<pre>"+esc(p.replace(/\n$/,""))+"</pre>"}else{
+    out+=esc(p).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>")
+      .split(/\n{2,}/).map(x=>x.trim()).filter(Boolean).map(x=>"<p>"+x.replace(/\n/g,"<br>")+"</p>").join("")}});
+  return out}
+
+/* ---------- Python im Browser (Skulpt) ---------- */
+const DE_ERR={NameError:"Diesen Namen kennt Python nicht. Tippfehler oder Anführungszeichen vergessen?",SyntaxError:"Die Schreibweise stimmt nicht. Klammern, Doppelpunkt oder Anführungszeichen prüfen.",IndentationError:"Die Einrückung passt nicht. Nach einem Doppelpunkt 4 Leerzeichen einrücken.",TypeError:"Zwei Datentypen passen nicht zusammen, z. B. Text + Zahl. str() oder int() hilft.",IndexError:"Diese Position gibt es in der Liste nicht. Gezählt wird ab 0.",KeyError:"Diesen Schlüssel gibt es im Dictionary nicht.",ZeroDivisionError:"Durch 0 teilen geht nicht.",ValueError:"Der Wert passt nicht, z. B. int(\"abc\").",TimeLimitError:"Das Programm lief zu lange. Endlosschleife?"};
+const pyReady=()=>typeof Sk!=="undefined"&&Sk.builtinFiles;
+function runPython(code,{out,onInput}){
+  return new Promise(async resolve=>{
+    let text="";
+    await window.SK_READY;
+    if(!pyReady()){resolve({ok:false,output:"",error:"Python konnte nicht geladen werden. Prüfe die Internetverbindung und lade die Seite neu.",kind:"Load"});return}
+    Sk.configure({
+      output:s=>{text+=s;out&&out(s)},
+      read:x=>{const m=String(x).match(/(?:^|\/)(gpiozero|board|adafruit_dht)\.py$/);if(m)return MOCKS[m[1]];
+        if(Sk.builtinFiles.files[x]===undefined)throw "Datei nicht gefunden: "+x;return Sk.builtinFiles.files[x]},
+      __future__:Sk.python3,inputfunTakesPrompt:true,execLimit:15000,yieldLimit:100,
+      inputfun:p=>onInput?onInput(p):Promise.resolve("")
+    });
+    Sk.misceval.asyncToPromise(()=>Sk.importMainWithBody("<stdin>",false,code,true))
+      .then(()=>resolve({ok:true,output:text}))
+      .catch(err=>{const msg=err.toString();const kind=(msg.match(/^(\w+Error)/)||[])[1]||"Fehler";resolve({ok:false,output:text,error:msg,kind})});
+  })}
+
+function makeIDE(start,label="main.py"){
+  const el=h(`<div class="ide"><div class="bar"><span>${label}</span><button class="runbtn" type="button">▶ Ausführen</button></div><textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python-Code"></textarea><div class="console" aria-live="polite"><span class="dim">Ausgabe erscheint hier.</span></div></div>`);
+  const ta=$("textarea",el),con=$(".console",el);ta.value=start||"";
+  ta.addEventListener("keydown",e=>{
+    if(e.key==="Tab"){e.preventDefault();const s=ta.selectionStart;ta.setRangeText("    ",s,ta.selectionEnd,"end")}
+    if(e.key==="Enter"){const s=ta.selectionStart,line=ta.value.slice(0,s).split("\n").pop();let ind=(line.match(/^ */)||[""])[0];if(/:\s*$/.test(line))ind+="    ";if(ind){e.preventDefault();ta.setRangeText("\n"+ind,s,ta.selectionEnd,"end")}}
+  });
+  const api={el,ta,con,last:null,
+    async run(){
+      con.innerHTML="";
+      const r=await runPython(ta.value,{out:s=>con.append(s),onInput:p=>new Promise(res=>{
+        con.append(p||"");const row=h(`<div class="inrow"><input aria-label="Eingabe für input()" placeholder="Eingabe …"><button class="runbtn" type="button">OK</button></div>`);
+        con.append(row);const inp=$("input",row);inp.focus();
+        const go=()=>{const v=inp.value;row.remove();con.append(v+"\n");res(v)};
+        $("button",row).onclick=go;inp.onkeydown=e=>{if(e.key==="Enter")go()}})});
+      if(!r.ok){const e=document.createElement("div");e.className="e";e.textContent=r.error;con.append(e);
+        if(DE_ERR[r.kind]){const t=document.createElement("div");t.className="hint";t.textContent="→ "+DE_ERR[r.kind];con.append(t)}}
+      else if(!r.output){con.innerHTML='<span class="dim">(keine Ausgabe)</span>'}
+      api.last=r;return r}};
+  $(".runbtn",el).onclick=()=>api.run();
+  return api}
+
+/* ---------- Mentor (Claude) ---------- */
+/* ---------- KI-Anbieter: Claude (in Claude geöffnet) oder Gemini (eigener Schlüssel) ---------- */
+let sampleFn=null;let sampleState="pending";let claudeSample=null;
+const IN_CLAUDE=!!(window.claude&&window.claude.use);
+const GEMINI_DEFAULT={model:"gemini-3.8-flash",quick:"gemini-3.5-flash-lite"};
+if(!S.ai)S.ai={provider:"auto",key:"",model:GEMINI_DEFAULT.model,quick:GEMINI_DEFAULT.quick};
+const NO_AI_MSG=IN_CLAUDE?"Der KI-Mentor ist gerade nicht verfügbar. Lernpfad und Spielwiese gehen trotzdem.":"Für den KI-Mentor trägst du in den Einstellungen (Zahnrad oben rechts) einen kostenlosen Gemini-Schlüssel ein. Lernpfad und Spielwiese gehen auch ohne.";
+const GEM_URL="https://generativelanguage.googleapis.com/v1beta/";
+function parseLooseJSON(t){t=String(t).trim();try{return JSON.parse(t)}catch(e){}
+  const f=t.match(/```(?:json)?\s*([\s\S]*?)```/);if(f){try{return JSON.parse(f[1])}catch(e){}}
+  const a=t.search(/[\[{]/),b=Math.max(t.lastIndexOf("}"),t.lastIndexOf("]"));if(a>=0&&b>a){try{return JSON.parse(t.slice(a,b+1))}catch(e){}}
+  throw{code:"invalid_json",text:t}}
+async function gemFetch(path,opts={}){
+  let res;try{res=await fetch(GEM_URL+path,Object.assign({},opts,{headers:Object.assign({"x-goog-api-key":S.ai.key},opts.headers||{})}))}
+  catch(e){if(e&&e.name==="AbortError")throw{code:"cancelled"};throw{code:"network",message:String(e)}}
+  if(!res.ok){let msg="";try{msg=(await res.json()).error?.message||""}catch(e){}
+    const code=res.status===429?"rate_limited":res.status===404?"bad_model":(res.status===400&&/api key/i.test(msg))||res.status===401||res.status===403?"bad_key":"upstream_error";
+    throw{code,message:msg}}
+  return res}
+function makeGemini(){
+  const call=async(input,opts={})=>{
+    if(!S.ai.key)throw{code:"no_key"};
+    const turns=typeof input==="string"?[{role:"user",content:input}]:input;const contents=[];
+    turns.forEach(m=>{const role=m.role==="assistant"?"model":"user";const last=contents[contents.length-1];
+      if(last&&last.role===role)last.parts[0].text+="\n\n"+m.content;else contents.push({role,parts:[{text:m.content}]})});
+    const model=(opts.modelTier==="quick"?S.ai.quick:S.ai.model)||GEMINI_DEFAULT.model;
+    const body={contents,generationConfig:{temperature:opts.json?0.4:0.7}};if(opts.json)body.generationConfig.responseMimeType="application/json";
+    const res=await gemFetch(`models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:opts.signal});
+    const reader=res.body.getReader();const dec=new TextDecoder();let buf="",text="",blocked=false;
+    try{for(;;){const {value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
+      const lines=buf.split(/\r?\n/);buf=lines.pop();
+      for(const line of lines){if(!line.startsWith("data:"))continue;let d;try{d=JSON.parse(line.slice(5))}catch(e){continue}
+        if(d.promptFeedback?.blockReason)blocked=true;
+        const parts=d.candidates?.[0]?.content?.parts||[];const delta=parts.filter(p=>!p.thought).map(p=>p.text||"").join("");
+        if(delta){text+=delta;try{opts.onText&&opts.onText({text,delta})}catch(e){}}}}}
+    catch(e){if(e&&e.name==="AbortError")throw{code:"cancelled",text};throw{code:"upstream_error",text}}
+    if(blocked&&!text)throw{code:"refused"};
+    if(!text.trim())throw{code:"empty_completion"};
+    return{text,truncated:false}};
+  call.json=async(input,opts={})=>{const {text}=await call(input,Object.assign({},opts,{json:true}));return parseLooseJSON(text)};
+  return call}
+const geminiSample=makeGemini();
+function geminiPossible(){return !IN_CLAUDE}
+function pickProvider(){
+  const gem=geminiPossible()&&S.ai.key?geminiSample:null;
+  sampleFn=S.ai.provider==="claude"?claudeSample:S.ai.provider==="gemini"?gem:(claudeSample||gem);
+  sampleState=sampleFn?"ok":"none"}
+function aiName(){return sampleFn&&sampleFn===geminiSample?"Gemini":"Claude"}
+function rerender(){if(currentTab==="mentor")renderMentor();if(currentTab==="path")renderPath()}
+if(IN_CLAUDE){(async()=>{try{claudeSample=await window.claude.use("sample")}catch(e){claudeSample=null}pickProvider();rerender()})()}
+else pickProvider();
+
+/* ---------- Einstellungen ---------- */
+function openSettings(){
+  const root=$("#lesson");root.hidden=false;document.body.style.overflow="hidden";
+  const close=()=>{root.hidden=true;root.innerHTML="";document.body.style.overflow="";pickProvider();rerender()};
+  root.innerHTML="";
+  const w=h(`<div class="wrap"><div class="lbar"><button class="x" aria-label="Einstellungen schließen">×</button><h2 style="flex:1;font-size:1.2rem">Einstellungen</h2></div><div class="stack" id="setbody"></div></div>`);
+  root.append(w);$(".x",w).onclick=close;const body=$("#setbody",w);
+  const ai=h(`<div class="card stack"><span class="eyebrow">KI-Mentor</span>
+    <fieldset class="radios"><legend class="muted" style="font-size:.9rem">Welche KI soll helfen?</legend>
+      <label><input type="radio" name="prov" value="auto"> Automatisch <span class="muted">(Claude, wenn verfügbar, sonst Gemini)</span></label>
+      <label><input type="radio" name="prov" value="claude"> Claude <span class="muted">(nur wenn du die Seite in Claude öffnest)</span></label>
+      <label><input type="radio" name="prov" value="gemini"> Gemini <span class="muted">(eigener API-Schlüssel)</span></label></fieldset>
+    ${IN_CLAUDE?`<p class="notice">Du bist gerade in Claude. Hier darf die Seite keine Verbindung zu Google aufbauen, deshalb läuft Gemini nur in der installierten App-Version der Codekoje.</p>`:""}
+    <label for="gkey"><b>Gemini-API-Schlüssel</b></label>
+    <div class="row" style="flex-wrap:nowrap"><input id="gkey" class="field" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…"><button class="btn ghost small" id="showkey" type="button">Zeigen</button></div>
+    <p class="muted" style="font-size:.88rem">Einen kostenlosen Schlüssel bekommst du im <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Er bleibt nur in diesem Browser gespeichert und geht direkt an Google. Nutze ihn nur auf deinen eigenen Geräten.</p>
+    <div class="grid2"><label for="gmodel">Modell für den Mentor<input id="gmodel" class="field" list="gmodels" spellcheck="false"></label><label for="gquick">Modell für schnelle Tipps<input id="gquick" class="field" list="gmodels" spellcheck="false"></label></div>
+    <datalist id="gmodels"><option value="${GEMINI_DEFAULT.model}"><option value="${GEMINI_DEFAULT.quick}"></datalist>
+    <div class="row"><button class="btn small" id="gtest" type="button">Verbindung testen</button><button class="btn ghost small" id="glist" type="button">Modelle laden</button></div>
+    <div id="gmsg" aria-live="polite"></div></div>`);
+  body.append(ai);
+  ai.querySelectorAll('input[name="prov"]').forEach(r=>{r.checked=r.value===S.ai.provider;r.onchange=()=>{S.ai.provider=r.value;save()}});
+  const key=$("#gkey",ai),gm=$("#gmodel",ai),gq=$("#gquick",ai),msg=$("#gmsg",ai);
+  key.value=S.ai.key||"";gm.value=S.ai.model||GEMINI_DEFAULT.model;gq.value=S.ai.quick||GEMINI_DEFAULT.quick;
+  key.oninput=()=>{S.ai.key=key.value.trim();save()};gm.oninput=()=>{S.ai.model=gm.value.trim();save()};gq.oninput=()=>{S.ai.quick=gq.value.trim();save()};
+  $("#showkey",ai).onclick=e=>{key.type=key.type==="password"?"text":"password";e.target.textContent=key.type==="password"?"Zeigen":"Verbergen"};
+  const lock=IN_CLAUDE;["#gtest","#glist"].forEach(s=>$(s,ai).disabled=lock);
+  $("#gtest",ai).onclick=async()=>{msg.innerHTML='<p class="notice">Teste …</p>';
+    try{const {text}=await geminiSample("Antworte nur mit dem Wort: Ahoi",{});msg.innerHTML=`<p class="feedback ok"><b>Verbindung steht.</b> Gemini sagt: ${esc(text.trim().slice(0,60))}</p>`}
+    catch(e){msg.innerHTML=`<p class="feedback bad">${esc(sampleErr(e))}${e.message?`<br><span class="muted" style="font-size:.85rem">${esc(e.message)}</span>`:""}</p>`}};
+  $("#glist",ai).onclick=async()=>{msg.innerHTML='<p class="notice">Lade Modelle …</p>';
+    try{if(!S.ai.key)throw{code:"no_key"};const res=await gemFetch("models?pageSize=200");const d=await res.json();
+      const names=(d.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,"")).filter(n=>/gemini/.test(n));
+      const dl=$("#gmodels",ai);dl.innerHTML=names.map(n=>`<option value="${esc(n)}">`).join("");
+      msg.innerHTML=`<p class="feedback ok"><b>${names.length} Modelle gefunden.</b> Tipp ins Modellfeld, um sie auszuwählen.</p>`}
+    catch(e){msg.innerHTML=`<p class="feedback bad">${esc(sampleErr(e))}</p>`}};
+
+  const data=h(`<div class="card stack"><span class="eyebrow">Fortschritt</span><p class="muted" style="font-size:.9rem">XP, Lektionen und Niveau liegen nur in diesem Browser. Mit einer Sicherung nimmst du sie auf ein anderes Gerät mit. Der API-Schlüssel ist nicht enthalten.</p>
+    <div class="row"><button class="btn small" id="exp" type="button">Sicherung speichern</button><label class="btn ghost small" for="imp" style="cursor:pointer">Sicherung laden<input id="imp" type="file" accept="application/json,.json" hidden></label><button class="btn ghost small" id="reset" type="button">Alles zurücksetzen</button></div><div id="dmsg" aria-live="polite"></div></div>`);
+  body.append(data);const dmsg=$("#dmsg",data);
+  if(IN_CLAUDE)$("#exp",data).hidden=true;
+  $("#exp",data).onclick=()=>{const copy=JSON.parse(JSON.stringify(S));if(copy.ai)copy.ai.key="";
+    const blob=new Blob([JSON.stringify({app:"codekoje",version:1,state:copy},null,1)],{type:"application/json"});
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`codekoje-sicherung-${today()}.json`;document.body.append(a);a.click();a.remove();
+    dmsg.innerHTML='<p class="feedback ok">Sicherung gespeichert.</p>'};
+  $("#imp",data).onchange=async e=>{const f=e.target.files[0];if(!f)return;
+    try{const d=JSON.parse(await f.text());if(d.app!=="codekoje"||!d.state||!d.state.done)throw 0;const keep=S.ai;S=Object.assign({},S,d.state);S.ai=Object.assign({},d.state.ai||{},{key:keep.key});save();renderStats();dmsg.innerHTML='<p class="feedback ok">Sicherung geladen.</p>'}
+    catch(err){dmsg.innerHTML='<p class="feedback bad">Diese Datei ist keine Codekoje-Sicherung.</p>'}};
+  let armed=false;$("#reset",data).onclick=e=>{if(!armed){armed=true;e.target.textContent="Wirklich alles löschen? Nochmal tippen";return}
+    const keep=S.ai;S={done:{},xp:0,streak:0,last:"",mentor:null,skill:{},niveau:"auto",ai:keep};save();renderStats();dmsg.innerHTML='<p class="feedback ok">Zurückgesetzt.</p>';e.target.textContent="Alles zurücksetzen";armed=false};
+  body.append(h(`<p class="chartnote">Codekoje · Python lernen für die Kellerfarm. Python läuft im Browser mit Skulpt.</p>`));
+}
+const MENTOR_RULES=`Du bist der Programmier-Mentor in der Lern-App "Codekoje". Dein Schüler heißt Micha, ist Physiotherapeut, lernt Python als Anfänger in seiner knappen Freizeit und mag Wassersport und Natur.
+Regeln:
+- Antworte auf Deutsch, duze ihn, sei kurz (höchstens 6 Sätze plus ggf. kurzer Code).
+- Verrate keine fertige Lösung, außer er fordert ausdrücklich "Lösung". Gib Hinweise in Stufen: erst eine Frage oder Denkanstoß, dann ein konkreterer Tipp, dann ein Teil-Codebeispiel.
+- Erkläre Fehlermeldungen in einfachen Worten und sag, in welcher Zeile er schauen soll.
+- Lob konkret, wenn etwas gut ist, aber ohne Übertreibung.
+- Der Code läuft im Browser mit Skulpt (Python 3 Teilmenge): keine Dateien, kein Internet, keine pip-Pakete, kein sqlite3. print(), input(), random, math, time.sleep (kurz halten), Listen, Dicts, Funktionen, Klassen, try/except/finally gehen.
+- Sein großes Ziel: eine modulare Indoor-Farm im Keller, gesteuert von einem Raspberry Pi 4 (Zonen: Microgreens, Kräuter, Pilze, Radieschen; DHT22, kapazitive Bodenfeuchte über ADS1115, Relais für Grow-Light, 12-V-Lüfter, Vernebler, Pumpe; Lichtzyklen, Hysterese, Bewässerung, Logging in SQLite, Grafana).
+- Im Browser sind diese Pi-Module simuliert und genauso nutzbar wie auf dem echten Pi: gpiozero.OutputDevice(pin, active_high=True) mit .on(), .off(), .toggle(), .value (1/0), .is_active; board.D4 usw.; adafruit_dht.DHT22(board.D4) mit .temperature und .humidity (feste Beispielwerte, jede 4. Messung wirft RuntimeError). Schreib Code so, dass er später unverändert auf dem Pi läuft. Wo der echte Pi etwas anderes braucht (datetime.now().hour, sqlite3, ADS1115), sag es kurz dazu.
+- Sicherheit: 230 V nur durch Elektrofachkraft, Aktoren im finally abschalten, Pumpe zeitlich begrenzen.`;
+const FARM_PROJECT={goal:"Steuerung v1.0 für die Kellerfarm (Zone 1 Microgreens)",titel:"Kellerfarm v1.0",steps:[
+  {titel:"Sensor-Funktion",aufgabe:"Schreib eine Funktion messen(sensor), die bis zu 3-mal versucht, Temperatur und Feuchte zu lesen. Sie gibt (temp, rh) zurück oder None, wenn alle Versuche scheitern. Teste sie mit 5 Aufrufen.",lernt:"Funktionen, try/except, return"},
+  {titel:"Lichtzyklus Zone 1",aufgabe:"Grow-Light an GPIO 17 (Relais schaltet bei LOW). Licht ab 6 Uhr für 16 Stunden. Simuliere die Stunden 0 bis 23 und gib aus, wann das Licht an ist.",lernt:"gpiozero, active_high, Modulo"},
+  {titel:"Lüfter mit Hysterese",aufgabe:"Lüfter an GPIO 27: über 70 % Feuchte an, unter 60 % aus. Nutze dafür deine messen()-Funktion und gib jeden Schaltvorgang aus.",lernt:"Hysterese, Zustand merken"},
+  {titel:"Temperatur-Warnung",aufgabe:"Unter 18 °C soll eine Warnung erscheinen, und zwar nur einmal, bis die Temperatur wieder über 19 °C steigt.",lernt:"Hysterese für Meldungen"},
+  {titel:"Bewässerung",aufgabe:"Simuliere Bodenfeuchte-Rohwerte (random.randint zwischen 11000 und 27000), rechne sie in Prozent um und schalte die Pumpe an GPIO 22 unter 35 % für kurze Zeit ein. Die Pumpe muss danach garantiert aus sein.",lernt:"Umrechnung, random, try/finally"},
+  {titel:"Zonen als Klasse",aufgabe:"Pack Licht- und Lüftereinstellungen in eine Klasse Zone, sodass du später Kräuter und Pilze mit einer Zeile ergänzen kannst.",lernt:"Klassen, Methoden"},
+  {titel:"Regelschleife und Tagesbericht",aufgabe:"Simuliere 24 Stunden: messen, regeln, Messungen in einer Liste sammeln. Am Ende gibst du einen Tagesbericht aus (Ø Temperatur, max. Feuchte, Licht- und Lüfterstunden). Zum Schluss sind alle Relais aus.",lernt:"Schleifen, Listen, Auswertung"}
+],code:`# Kellerfarm v1.0 – Zone 1 (Microgreens)
+# Läuft hier simuliert und später fast unverändert auf dem Raspberry Pi.
+import time
+import random
+import board
+import adafruit_dht
+from gpiozero import OutputDevice
+
+sensor = adafruit_dht.DHT22(board.D4)
+licht = OutputDevice(17, active_high=False)
+luefter = OutputDevice(27, active_high=False)
+pumpe = OutputDevice(22, active_high=False)
+
+# Schritt 1: def messen(sensor): ...
+`};
+const KW_CHECK=["if","elif","else","for","while","def","return","class","try","except","finally","import","from","lambda","with","yield","global","nonlocal","assert","raise","break","continue","and","or","not","True","False","None","is","del","pass"];
+function knownVocab(){const v={calls:new Set(["print"]),methods:new Set(),kw:new Set(["in"]),feat:[]};
+  ALL.forEach(l=>{if(!S.done[l.id])return;const x=VOCAB[l.id]||{};
+    (x.calls||[]).forEach(c=>{const n=c.split(".").pop();v.calls.add(n);if(c.includes("."))v.methods.add(n)});
+    (x.methods||[]).forEach(m=>v.methods.add(m));(x.kw||[]).forEach(k=>v.kw.add(k));(x.feat||[]).forEach(f=>v.feat.push(f));(x.ops||[]).forEach(o=>v.feat.push("Operatoren "+o))});
+  return v}
+function knownText(){const v=knownVocab();return `Funktionen: ${[...v.calls].join(", ")}; Methoden: ${[...v.methods].join(", ")||"keine"}; Schlüsselwörter: ${[...v.kw].join(", ")}; außerdem: ${v.feat.join(", ")||"nur Grundlagen"}`}
+function rules(){return MENTOR_RULES+"\n- Er kennt bisher NUR das hier: "+knownText()+". Alles andere ist neu für ihn: Benutze es nur, wenn es nötig ist, und erkläre es dann vorher kurz mit einem Mini-Beispiel."}
+function vocabViolations(code){
+  const v=knownVocab();const bad=new Set();const raw=String(code);
+  if(/\bf["']/.test(raw)&&!v.feat.includes("fstring"))bad.add("f-Strings");
+  let src=raw.replace(/#.*$/gm,"").replace(/("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')/g,'""');
+  if(/\[[^\]\n]*\bfor\b/.test(src)&&!v.feat.includes("List Comprehension"))bad.add("List Comprehension");
+  if(/[+\-*\/]=/.test(src)&&!v.feat.includes("+="))bad.add("+= / -=");
+  if(/\w\[[^\]\n]*:[^\]\n]*\]/.test(src))bad.add("Slicing [a:b]");
+  KW_CHECK.forEach(k=>{if(new RegExp("\\b"+k+"\\b").test(src)&&!v.kw.has(k))bad.add(k)});
+  const defined=new Set([...src.matchAll(/\b(?:def|class)\s+(\w+)/g)].map(m=>m[1]));
+  for(const m of src.matchAll(/\.([A-Za-z_]\w*)\s*\(/g)){const n=m[1];if(!v.methods.has(n)&&!defined.has(n))bad.add("."+n+"()")}
+  for(const m of src.matchAll(/(^|[^.\w])([A-Za-z_]\w*)\s*\(/gm)){const n=m[2];if(KW_CHECK.includes(n)||n==="in")continue;if(!v.calls.has(n)&&!defined.has(n))bad.add(n+"()")}
+  return [...bad]}
+function sampleErr(e){const c=e&&e.code;return{no_key:"Trag zuerst deinen Gemini-Schlüssel in den Einstellungen ein.",bad_key:"Google akzeptiert den Gemini-Schlüssel nicht. Prüfe ihn in den Einstellungen.",bad_model:"Dieses Gemini-Modell gibt es nicht (mehr). Lade in den Einstellungen die Modellliste und wähl ein anderes.",network:"Keine Verbindung zu Gemini. Bist du online?",not_granted:"Du hast den Mentor für diese Seite nicht erlaubt. Lade die Seite neu, um erneut gefragt zu werden.",rate_limited:"Gerade zu viele Anfragen. Versuch es in einer Minute nochmal.",session_expired:"Bitte bei Claude neu anmelden.",refused:"Darauf antwortet der Mentor nicht. Formuliere die Frage anders.",invalid_json:"Die Antwort kam im falschen Format. Versuch es nochmal.",cancelled:""}[c]??"Der Mentor ist gerade nicht erreichbar. Versuch es nochmal."}
+
+/* ---------- Niveau: Fähigkeiten und Anpassung ---------- */
+const SKILLS={ausgabe:"Ausgaben",variablen:"Variablen",rechnen:"Rechnen",texte:"Texte",bedingungen:"Entscheidungen",listen:"Listen",schleifen:"Schleifen",funktionen:"Funktionen",dicts:"Dictionaries",fehler:"Fehlerbehandlung",klassen:"Klassen",hardware:"Pi-Hardware",regellogik:"Regellogik",module:"Module"};
+const TAGS={print:["ausgabe"],vars:["variablen"],math:["rechnen"],str:["texte"],if:["bedingungen"],list:["listen"],for:["schleifen"],while:["schleifen"],func:["funktionen"],dict:["dicts"],bool:["bedingungen"],kurz:["rechnen","bedingungen"],mod:["module"],
+  f_mess:["rechnen","bedingungen"],f_gpio:["hardware"],f_sensor:["fehler","hardware"],f_schwelle:["funktionen","bedingungen"],f_hyst:["regellogik"],f_licht:["regellogik","rechnen"],f_zonen:["dicts","listen"],f_klasse:["klassen"],f_wasser:["funktionen","rechnen"],f_schleife:["schleifen","regellogik"],f_log:["listen"],f_pi:["hardware"]};
+const LVL=["Einsteiger","Sicher","Profi"];
+const LVL_DESC=["Anfänger: genau ein Konzept, Lösung 3 bis 8 Zeilen, Startcode mit Gerüst und Kommentaren","solide Grundlagen: zwei Konzepte kombinieren, Lösung 8 bis 15 Zeilen, Startcode nur mit den Daten","sicher: mit Randfall oder kleinem Kniff, Lösung 12 bis 25 Zeilen, Startcode nur mit den Daten"];
+if(!S.skill){S.skill={};Object.keys(S.done||{}).forEach(id=>(TAGS[id]||[]).forEach(t=>{S.skill[t]={s:55,n:1}}))}
+if(!S.niveau)S.niveau="auto";
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function skillScore(t){return S.skill[t]?S.skill[t].s:null}
+function levelFromScore(v){return v<40?0:v<75?1:2}
+function levelFor(tags){
+  if(S.niveau==="leicht")return 0;if(S.niveau==="schwer")return 2;
+  const v=tags.map(t=>skillScore(t)??35);return levelFromScore(v.reduce((a,b)=>a+b,0)/v.length)}
+function bump(tags,d){tags.forEach(t=>{const k=S.skill[t]||{s:35,n:0};k.s=Math.round(clamp(k.s+d*(k.n<3?1.4:1),0,100));k.n++;S.skill[t]=k});save()}
+function codeDelta(r){return (r.fails===0?14:r.fails<=2?7:2)-(r.tipUsed?4:0)-(r.asked?3:0)}
+function lvlChip(l){return `<span class="lvl lvl${l}" title="Schwierigkeit dieser Aufgabe">${LVL[l]}</span>`}
+function normOut(x,anyOrder){let l=String(x).replace(/\r/g,"").split("\n").map(z=>z.replace(/\s+$/,""));if(anyOrder)l=l.filter(Boolean).sort();return l.join("\n").trim()}
+function weakestSkill(){const t=Object.keys(SKILLS).filter(k=>S.skill[k]);if(!t.length)return "ausgabe";return t.sort((a,b)=>S.skill[a].s-S.skill[b].s)[0]}
+function pickRepeat(tag){const pool=[];ALL.forEach(l=>{if(S.done[l.id]&&(TAGS[l.id]||[]).includes(tag))l.steps.forEach(s=>{if(s.t==="code")pool.push(s)})});return pool.length?pool[Math.floor(Math.random()*pool.length)]:null}
+
+/* Eine Code-Aufgabe anzeigen, mit Hilfen je nach Niveau */
+function renderCodeTask(body,s,o){
+  const lvl=o.lvl;
+  body.append(h(`<div class="row" style="justify-content:space-between"><span class="eyebrow">${esc(o.label||"Aufgabe")}</span>${lvlChip(lvl)}</div>`),h(`<h2 style="font-size:1.15rem;line-height:1.35">${s.task}</h2>`));
+  if(lvl===0)body.append(h(`<div class="stack" style="gap:4px"><span class="eyebrow">So soll die Ausgabe aussehen</span><pre class="code">${esc(s.expect)}</pre></div>`));
+  if(o.recap){const rb=h(`<button class="btn ghost small" type="button" style="align-self:flex-start">${o.recapOpen?"Erklärung ausblenden":"Erklärung nachlesen"}</button>`);const rc=h(`<div class="card body recap" ${o.recapOpen?"":"hidden"}>${o.recap}</div>`);
+    rb.onclick=()=>{rc.hidden=!rc.hidden;rb.textContent=rc.hidden?"Erklärung nachlesen":"Erklärung ausblenden"};body.append(rb,rc)}
+  const ide=makeIDE(s.start);body.append(ide.el);const fb=h(`<div></div>`);body.append(fb);
+  const tip=h(`<button class="btn ghost small" type="button" ${lvl===2?"hidden":""}>Tipp</button>`);
+  const ask=h(`<button class="btn ghost small" type="button" hidden>Mentor fragen</button>`);
+  const check=h(`<button class="btn" type="button">Prüfen</button>`);
+  const row=h(`<div class="row" style="justify-content:space-between"></div>`);const l=h(`<div class="row"></div>`);l.append(tip,ask);row.append(l,check);body.append(row);
+  const mbox=h(`<div class="msg ai" hidden></div>`);body.append(mbox);
+  const r0={fails:0,tipUsed:false,asked:false};
+  const showTip=()=>{fb.className="feedback ok";fb.style.borderLeftColor="var(--signal)";fb.innerHTML="<b>Tipp:</b> "+esc(s.hint)};
+  tip.onclick=()=>{r0.tipUsed=true;showTip()};
+  check.onclick=async()=>{check.disabled=true;const r=await ide.run();check.disabled=false;fb.style.borderLeftColor="";
+    const missing=(s.mustContain||[]).filter(m=>!ide.ta.value.includes(m));
+    const same=r.ok&&normOut(r.output,s.anyOrder)===normOut(s.expect,s.anyOrder);
+    if(same&&!missing.length){fb.className="feedback ok";fb.innerHTML=`<b>Läuft!</b> ${r0.fails===0&&!r0.tipUsed?"Auf Anhieb richtig.":"Geschafft."}`;
+      check.replaceWith(o.next);o.onDone(r0);o.next.focus();return}
+    r0.fails++;fb.className="feedback bad";
+    const showExpect=lvl<2||r0.fails>=2;
+    fb.innerHTML=!r.ok?"<b>Fehler im Code.</b> Schau in die Konsole oben.":missing.length?`<b>Die Ausgabe ist ${same?"richtig":"noch nicht richtig"}</b>, aber nutze bitte: ${missing.map(m=>"<code>"+esc(m)+"</code>").join(", ")}`:showExpect?`<b>Noch nicht.</b> Erwartet:<pre class="code" style="margin-top:6px">${esc(s.expect)}</pre>`:"<b>Noch nicht.</b> Vergleich deine Ausgabe genau mit der Aufgabe.";
+    if(lvl===0&&r0.fails===1&&s.hint){const t=h(`<div class="feedback ok" style="border-left-color:var(--signal);margin-top:8px"><b>Tipp:</b> ${esc(s.hint)}</div>`);fb.append(t)}
+    if(lvl===2&&r0.fails>=2)tip.hidden=false;
+    if(sampleState==="ok")ask.hidden=false};
+  ask.onclick=async()=>{r0.asked=true;mbox.hidden=false;mbox.innerHTML='<div class="who">Mentor</div><p class="muted">Denkt nach …</p>';ask.disabled=true;
+    const r=ide.last||{};const prompt=`${rules()}\n\nMicha steckt in einer Übung fest. Sein Niveau hier: ${LVL[lvl]}. Gib EINEN hilfreichen Hinweis, nicht die Lösung${lvl===0?", sehr anschaulich und kleinschrittig":lvl===2?", knapp, eher als Denkanstoß":""}.\nAufgabe: ${s.task.replace(/<[^>]+>/g,"")}\nErwartete Ausgabe:\n${s.expect}\nSein Code:\n${ide.ta.value}\nTatsächliche Ausgabe:\n${r.output||"(keine)"}\n${r.error?"Fehlermeldung: "+r.error:""}\nVersuche bisher: ${r0.fails}`;
+    try{await sampleFn(prompt,{modelTier:"quick",cache:false,onText:({text})=>{mbox.innerHTML='<div class="who">Mentor</div>'+md(text)}})}
+    catch(e){mbox.innerHTML='<div class="who">Mentor</div><p>'+esc(sampleErr(e))+"</p>"}ask.disabled=false};
+}
+
+/* Neue Übung von Claude, geprüft durch Ausführen der Musterlösung */
+async function genTask(tag,lvl,base){
+  if(sampleState!=="ok")throw{msg:NO_AI_MSG};
+  const base_prompt=`${rules()}\n\nErstelle EINE neue Python-Übungsaufgabe zur Fähigkeit "${SKILLS[tag]}" für das Niveau "${LVL[lvl]}" (${LVL_DESC[lvl]}). Thema: seine Kellerfarm (Sensoren, Zonen, Licht, Lüfter, Bewässerung, Ernte) oder Wassersport.${base?"\nSie soll eine etwas schwerere Variante dieser Aufgabe sein: "+base:""}\nSTRENGE Regel: Die Musterlösung darf NUR die Dinge aus der Liste oben benutzen. Keine anderen Funktionen, Methoden oder Schlüsselwörter, also zum Beispiel kein strip, split, join, upper, lower, enumerate, zip, sorted, abs, break, None und kein Slicing, wenn es nicht in der Liste steht.\nWeitere Regeln: feste Daten im Code (kein input(), kein random), die Aufgabe legt das Ausgabeformat exakt fest (mit Beispielzeile), Code läuft im Browser mit Skulpt.\nAntworte NUR mit JSON: {"titel":"kurz","erklaerung":"2 bis 4 einfache Sätze: was er für diese Aufgabe braucht und wie es funktioniert, als hätte er es lange nicht benutzt","beispiel":"kurzes lauffähiges Beispiel (3 bis 6 Zeilen), das das Prinzip zeigt, aber NICHT die Lösung ist","aufgabe":"2 bis 4 Sätze inkl. exaktem Ausgabeformat","start":"Startcode mit den Daten und Kommentaren als Gerüst, OHNE Lösung","loesung":"vollständige Musterlösung","tipp":"ein hilfreicher Satz ohne Lösung","muss":["höchstens 2 Schlüsselwörter, die im Code vorkommen müssen"]}`;
+  let j,bad=[];
+  for(let versuch=0;versuch<2;versuch++){
+    const prompt=versuch===0?base_prompt:base_prompt+`\n\nACHTUNG: Dein letzter Entwurf benutzte ${bad.join(", ")}. Das kennt er noch nicht. Bau die Aufgabe so, dass sie ohne diese Dinge auskommt.`;
+    j=await sampleFn.json(prompt,{modelTier:"default",cache:false});
+    if(!j||typeof j.loesung!=="string"||typeof j.aufgabe!=="string")throw{code:"invalid_json"};
+    bad=vocabViolations(j.loesung);if(!bad.length)break}
+  if(bad.length)throw{msg:`Die Übung hätte Dinge gebraucht, die du noch nicht gelernt hast (${bad.join(", ")}). Lass dir eine neue bauen oder mach erst die nächste Lektion.`};
+  const sol=await runPython(j.loesung,{});
+  if(!sol.ok||!sol.output.trim())throw{msg:"Die erzeugte Übung lief nicht fehlerfrei. Lass dir eine neue bauen."};
+  const start=String(j.start||"");const st=await runPython(start,{});
+  if(st.ok&&normOut(st.output)===normOut(sol.output))throw{msg:"Der Startcode hätte die Aufgabe schon gelöst. Lass dir eine neue bauen."};
+  let bsp=String(j.beispiel||"");if(bsp){const r=await runPython(bsp,{});if(!r.ok)bsp=""}
+  const recap=`<h4>Kurz erklärt</h4><p>${esc(j.erklaerung||"")}</p>${bsp?`<pre class="code">${esc(bsp)}</pre>`:""}`;
+  const muss=(Array.isArray(j.muss)?j.muss:[]).map(String).filter(m=>m&&j.loesung.includes(m)).slice(0,2);
+  return {title:String(j.titel||"Übung"),task:esc(j.aufgabe),start,expect:normOut(sol.output),hint:String(j.tipp||""),mustContain:muss,recap}}
+
+function openTraining(tag,o={}){
+  const root=$("#lesson");root.hidden=false;document.body.style.overflow="hidden";
+  const close=()=>{root.hidden=true;root.innerHTML="";document.body.style.overflow="";renderPath()};
+  const lvl=o.lvl??levelFor([tag]);
+  root.innerHTML="";
+  const w=h(`<div class="wrap"><div class="lbar"><button class="x" aria-label="Training schließen">×</button><span class="eyebrow" style="flex:1">Training · ${esc(SKILLS[tag])}</span></div><div class="stack" id="tbody"></div></div>`);
+  root.append(w);$(".x",w).onclick=close;const body=$("#tbody",w);
+  const footer=()=>{const r=h(`<div class="row" style="justify-content:space-between;margin-top:6px"><button class="btn ghost small" type="button">Training beenden</button></div>`);$("button",r).onclick=close;return r};
+  const show=task=>{
+    body.innerHTML="";const before=skillScore(tag)??35;
+    if(task.title)body.append(h(`<h3 class="muted" style="font-size:1rem">${esc(task.title)}</h3>`));
+    const next=h(`<button class="btn" type="button">Nächste Übung</button>`);
+    next.onclick=()=>openTraining(tag,{mode:o.mode});
+    renderCodeTask(body,task,{lvl,recap:task.recap,recapOpen:true,label:o.mode==="repeat"?"Wiederholung":"Neue Übung",next,onDone:r=>{bump([tag],codeDelta(r)*(o.mode==="repeat"?0.6:1));addXP(8);
+      const after=skillScore(tag);body.append(h(`<p class="notice">${esc(SKILLS[tag])}: ${Math.round(before)} → ${after} Punkte. +8 XP</p>`))}});
+    body.append(footer())};
+  if(o.mode==="repeat"){const t=pickRepeat(tag);if(t){show(t);return}body.append(h(`<p class="notice">Zu dieser Fähigkeit hast du noch keine Aufgabe gelöst.</p>`),footer());return}
+  body.append(h(`<p class="notice">${aiName()} baut eine Übung auf deinem Niveau (${LVL[lvl]}). Das dauert etwa eine halbe Minute …</p>`));
+  genTask(tag,lvl,o.base).then(show).catch(e=>{body.innerHTML="";
+    const again=h(`<button class="btn" type="button">Neue Übung bauen</button>`);again.onclick=()=>openTraining(tag,o);
+    body.append(h(`<p class="feedback bad">${esc(e.msg||sampleErr(e))}</p>`));
+    const r=h(`<div class="row"></div>`);if(sampleState==="ok")r.append(again);if(pickRepeat(tag)){const rep=h(`<button class="btn ghost" type="button">Stattdessen wiederholen</button>`);rep.onclick=()=>openTraining(tag,{mode:"repeat"});r.append(rep)}
+    body.append(r,footer())});
+}
+
+function renderSkills(box){
+  const touched=Object.keys(SKILLS).filter(k=>S.skill[k]);
+  const card=h(`<div class="card stack"><div class="row" style="justify-content:space-between"><div style="min-width:0"><span class="eyebrow">Dein Niveau</span><h3 id="lvlhead"></h3></div><label class="row muted" style="font-size:.85rem;gap:6px" for="niveau">Schwierigkeit<select id="niveau" class="field" style="width:auto;padding:6px 8px"><option value="auto">passt sich an</option><option value="leicht">immer leichter</option><option value="schwer">immer schwerer</option></select></label></div><div class="bars"></div><div class="row" id="trainrow"></div></div>`);
+  $("#niveau",card).value=S.niveau;$("#niveau",card).onchange=e=>{S.niveau=e.target.value;save();renderPath()};
+  const bars=$(".bars",card);
+  if(!touched.length){$("#lvlhead",card).textContent="Noch offen";bars.append(h(`<p class="muted" style="font-size:.9rem">Nach deiner ersten Lektion siehst du hier, wie sicher du in jeder Fähigkeit bist. Die Übungen passen sich daran an.</p>`))}
+  else{const avg=touched.reduce((a,k)=>a+S.skill[k].s,0)/touched.length;$("#lvlhead",card).innerHTML=LVL[levelFromScore(avg)]+(S.niveau!=="auto"?` <span class="muted" style="font-size:.85rem;font-weight:400">(Aufgaben ${S.niveau==="leicht"?"leichter":"schwerer"} gestellt)</span>`:"");
+    touched.sort((a,b)=>S.skill[a].s-S.skill[b].s).forEach(k=>{const v=S.skill[k].s;
+      bars.append(h(`<div class="bar"><span>${esc(SKILLS[k])}</span><span class="track" role="img" aria-label="${v} von 100"><i style="width:${v}%"></i></span><span class="lv">${LVL[levelFromScore(v)]}</span></div>`))})}
+  const w=weakestSkill();const tr=$("#trainrow",card);
+  if(touched.length){
+    const gen=h(`<button class="btn small" type="button">Übung zu ${esc(SKILLS[w])}</button>`);gen.disabled=sampleState!=="ok";gen.title=sampleState==="ok"?"Die KI baut eine neue Übung für deine schwächste Fähigkeit":NO_AI_MSG;gen.onclick=()=>openTraining(w);
+    tr.append(gen);
+    if(pickRepeat(w)){const rep=h(`<button class="btn ghost small" type="button">Bekannte Aufgabe wiederholen</button>`);rep.onclick=()=>openTraining(w,{mode:"repeat"});tr.append(rep)}}
+  box.append(card)}
+
+/* ---------- Lernpfad ---------- */
+function lessonIndexUnlocked(){let i=0;while(i<ALL.length&&S.done[ALL[i].id])i++;return i}
+function renderPath(){
+  const box=$("#tab-path");const next=lessonIndexUnlocked();const doneN=ALL.filter(l=>S.done[l.id]).length;
+  box.innerHTML="";
+  box.append(h(`<div class="goal card"><div class="goal-txt"><span class="eyebrow">Dein Projekt</span><h2>Kellerfarm mit Raspberry Pi</h2><p class="muted">Licht nach Zeitplan, Lüftung mit Hysterese, Bewässerung nach Bodenfeuchte und ein Messwert-Log. Dieser Pfad bringt dir genau das bei.</p></div><div class="ring" role="img" aria-label="${doneN} von ${ALL.length} Lektionen"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--sunk)" stroke-width="5"/>${doneN?`<circle cx="22" cy="22" r="18" fill="none" stroke="var(--ok)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(doneN/ALL.length*113.1).toFixed(1)} 113.1" transform="rotate(-90 22 22)"/>`:""}</svg><b>${doneN}/${ALL.length}</b></div></div>`));
+  renderSkills(box);
+  box.append(h(`<h2 style="font-size:1.1rem">${next>=ALL.length?"Alles geschafft. Jetzt baust du die Steuerung im Mentor-Tab.":"Weiter mit: "+esc(ALL[next].title)}</h2>`));
+  ETAPPEN.forEach(E=>{
+    box.append(h(`<div class="stack" style="gap:4px;margin-top:8px"><span class="eyebrow">${esc(E.title)}</span><p class="muted" style="font-size:.9rem">${esc(E.note)}</p></div>`));
+    const route=h(`<div class="route"></div>`);
+    ALL.forEach((l,i)=>{if(l.kurs!==E.key)return;
+      const st=S.done[l.id]?"done":i===next?"next":"";const num=ALL.filter((x,j)=>x.kurs===E.key&&j<=i).length;
+      const b=h(`<button class="stop ${st}" type="button" ${i>next?"disabled":""}><span class="buoy">${S.done[l.id]?"✓":num}</span><span class="txt"><span class="t">${esc(l.title)}</span><br><span class="s">${esc(l.sub)}</span></span><span class="xp">${i>next?"🔒":l.steps.length+" Schritte"}</span></button>`);
+      b.onclick=()=>openLesson(i);route.append(b)});
+    box.append(route)});
+  box.append(h(`<p class="chartnote">Jede Lektion dauert etwa 5 bis 10 Minuten. Falsch beantwortete Fragen kommen am Ende der Lektion noch einmal. Fortschritt und Niveau werden nur in diesem Browser gespeichert.</p>`));
+}
+
+function openLesson(li){
+  const L=ALL[li];const tags=TAGS[L.id]||[];const lvl=levelFor(tags);
+  const before={};tags.forEach(t=>before[t]=skillScore(t)??35);
+  const steps=L.steps.slice();let si=0;let gained=0;let lastTask="";
+  const recap=L.steps.filter(x=>x.t==="info").map(x=>`<h4>${x.title}</h4>${x.body}${x.code?`<pre class="code">${esc(x.code)}</pre>`:""}`).join("");
+  const root=$("#lesson");root.hidden=false;document.body.style.overflow="hidden";
+  const close=()=>{root.hidden=true;root.innerHTML="";document.body.style.overflow="";renderPath()};
+  function step(){
+    const s=steps[si];root.innerHTML="";
+    const w=h(`<div class="wrap"><div class="lbar"><button class="x" aria-label="Lektion schließen">×</button><div class="prog"><i style="width:${si/steps.length*100}%"></i></div><span class="eyebrow">${si+1}/${steps.length}</span></div><div class="stack" id="sbody"></div></div>`);
+    root.append(w);$(".x",w).onclick=close;const body=$("#sbody",w);
+    const nextBtn=h(`<button class="btn" type="button">Weiter</button>`);
+    const advance=()=>{si++;if(si<steps.length)step();else finish()};
+    nextBtn.onclick=advance;
+    if(s.t==="info"){
+      body.append(h(`<span class="eyebrow">${esc(L.title)}</span>`),h(`<h2>${s.title}</h2>`),h(`<div class="body">${s.body}</div>`));
+      if(s.code){const ide=makeIDE(s.code,"beispiel.py");body.append(ide.el);ide.ta.style.minHeight="90px"}
+      const row=h(`<div class="row end"></div>`);row.append(nextBtn);body.append(row);
+    }
+    if(s.t==="quiz"){
+      body.append(h(`<span class="eyebrow">${s.repeat?"Noch einmal":"Frage"}</span>`),h(`<h2>${s.q}</h2>`));
+      if(s.code)body.append(h(`<pre class="code">${esc(s.code)}</pre>`));
+      const opts=h(`<div class="opts" role="group"></div>`);let pick=-1;
+      s.opts.forEach((o,i)=>{const b=h(`<button class="opt" type="button" aria-pressed="false">${esc(o)}</button>`);b.onclick=()=>{if(opts.dataset.locked)return;pick=i;opts.querySelectorAll(".opt").forEach((x,j)=>x.setAttribute("aria-pressed",j===i));check.disabled=false};opts.append(b)});
+      body.append(opts);const fb=h(`<div></div>`);body.append(fb);
+      const check=h(`<button class="btn" type="button" disabled>Prüfen</button>`);const row=h(`<div class="row end"></div>`);row.append(check);body.append(row);
+      check.onclick=()=>{opts.dataset.locked=1;const bs=opts.querySelectorAll(".opt");bs[s.a].classList.add("right");
+        if(pick===s.a){fb.className="feedback ok";fb.innerHTML="<b>Richtig.</b> "+s.why;gained+=s.repeat?2:5;bump(tags,s.repeat?3:6)}
+        else{bs[pick].classList.add("wrong");fb.className="feedback bad";fb.innerHTML="<b>Nicht ganz.</b> "+s.why+(s.repeat?"":" <span class=\"muted\">Die Frage kommt am Ende noch einmal.</span>");bump(tags,s.repeat?-4:-8);
+          if(!s.repeat)steps.push(Object.assign({},s,{repeat:true}))}
+        check.replaceWith(nextBtn);nextBtn.focus()};
+    }
+    if(s.t==="fill"){
+      body.append(h(`<span class="eyebrow">${s.repeat?"Noch einmal":"Lückentext"}</span>`),h(`<h2>${s.q}</h2>`));
+      const parts=s.code.split("___");const filled=Array(parts.length-1).fill(null);let locked=false;
+      const pre=h(`<pre class="code fillcode"></pre>`);body.append(pre);
+      const chips=h(`<div class="chips" role="group" aria-label="Bausteine"></div>`);body.append(chips);
+      const fb=h(`<div></div>`);body.append(fb);
+      const check=h(`<button class="btn" type="button" disabled>Prüfen</button>`);const row=h(`<div class="row end"></div>`);row.append(check);body.append(row);
+      const draw=()=>{pre.innerHTML="";parts.forEach((p,i)=>{pre.append(document.createTextNode(p));if(i<filled.length){
+        const b=h(`<button type="button" class="slot${filled[i]===null?" empty":""}" aria-label="Lücke ${i+1}"></button>`);b.textContent=filled[i]===null?"  ?  ":filled[i];
+        if(locked)b.classList.add(filled[i]===s.blanks[i]?"right":"wrong");
+        b.onclick=()=>{if(locked)return;filled[i]=null;draw()};pre.append(b)}});check.disabled=filled.includes(null)};
+      s.opts.slice().sort(()=>Math.random()-.5).forEach(o=>{const c=h(`<button type="button" class="chip-opt"></button>`);c.textContent=o;
+        c.onclick=()=>{if(locked)return;const i=filled.indexOf(null);if(i<0)return;filled[i]=o;draw()};chips.append(c)});
+      draw();
+      check.onclick=()=>{locked=true;draw();const ok=filled.every((v,i)=>v===s.blanks[i]);
+        if(ok){fb.className="feedback ok";fb.innerHTML="<b>Richtig.</b> "+s.why+(s.output!==undefined?`<div class="eyebrow" style="margin-top:8px">Ausgabe</div><pre class="code" style="margin-top:4px">${esc(s.output||"(keine)")}</pre>`:"");gained+=s.repeat?2:5;bump(tags,s.repeat?3:6)}
+        else{fb.className="feedback bad";fb.innerHTML=`<b>Nicht ganz.</b> Richtig wäre: ${s.blanks.map(b=>"<code>"+esc(b)+"</code>").join(", ")}. ${s.why}`+(s.repeat?"":' <span class="muted">Die Aufgabe kommt am Ende noch einmal.</span>');bump(tags,s.repeat?-4:-8);
+          if(!s.repeat)steps.push(Object.assign({},s,{repeat:true}))}
+        check.replaceWith(nextBtn);nextBtn.focus()};
+    }
+    if(s.t==="code"){
+      lastTask=s.task.replace(/<[^>]+>/g,"");
+      renderCodeTask(body,s,{lvl,recap,next:nextBtn,onDone:r=>{gained+=10;bump(tags,codeDelta(r))}});
+    }
+  }
+  function finish(){
+    const first=!S.done[L.id];S.done[L.id]=true;const bonus=first?20:0;addXP(gained+bonus);
+    const changes=tags.map(t=>`<li><span>${esc(SKILLS[t])}</span><b>${Math.round(before[t])} → ${skillScore(t)}</b></li>`).join("");
+    const nl=levelFor(tags);
+    root.innerHTML="";const w=h(`<div class="wrap"><div class="stack" style="padding-top:8vh;text-align:center;align-items:center"><svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="32" fill="var(--ok-bg)" stroke="var(--ok)" stroke-width="3"/><path d="M22 37l9 9 19-20" fill="none" stroke="var(--ok)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><h2>${esc(L.title)} geschafft</h2><p class="muted">+${gained+bonus} XP${first?" (inkl. 20 Bonus)":""}</p>${tags.length?`<ul class="deltas">${changes}</ul>`:""}<div class="row" style="justify-content:center" id="fin"></div></div></div>`);
+    root.append(w);const fin=$("#fin",w);
+    if(tags.length&&sampleState==="ok"){const t=tags.slice().sort((a,b)=>(skillScore(a)??0)-(skillScore(b)??0))[0];
+      const extra=h(`<button class="btn ghost" type="button">${nl===0?"Noch eine leichte Übung dazu":nl===2?"Schwerere Bonus-Aufgabe":"Noch eine Übung dazu"}</button>`);
+      extra.onclick=()=>openTraining(t,nl===2&&lastTask?{base:lastTask}:{});fin.append(extra)}
+    const back=h(`<button class="btn" type="button">Zurück zum Lernpfad</button>`);back.onclick=close;fin.append(back);back.focus()}
+  step();
+}
+
+/* ---------- Mentor-Tab ---------- */
+let mentorCtl=null;let projectIDE=null;
+const IDEAS=["Erntekalender für alle Zonen","Pilz-Zone mit Vernebler","Trainingsstunden der Vereinsmitglieder zusammenrechnen","Windstärke in Beaufort umrechnen und bewerten"];
+function renderMentor(){
+  const box=$("#tab-mentor");box.innerHTML="";
+  box.append(h(`<div class="stack" style="gap:6px"><span class="eyebrow">Projekt-Mentor</span><h2>Lerne an einem eigenen Ziel</h2></div>`));
+  if(sampleState==="pending"){box.append(h(`<p class="notice">Mentor wird verbunden …</p>`));return}
+  if(sampleState!=="ok"){box.append(h(`<p class="notice">${NO_AI_MSG}</p>`))}
+  const M=S.mentor;
+  if(!M){
+    const preset=h(`<div class="card stack"><span class="eyebrow">Vorlage</span><h3>${esc(FARM_PROJECT.titel)}</h3><p class="muted">Dein Fahrplan „Python-Skript v1.0“ in ${FARM_PROJECT.steps.length} Schritten: Sensor, Licht, Lüfter, Warnung, Bewässerung, Zonen und Regelschleife. Am besten startest du, wenn du Etappe 2 im Lernpfad geschafft hast.</p><div class="row end"><button class="btn" type="button">Projekt starten</button></div></div>`);
+    $("button",preset).onclick=()=>{S.mentor={goal:FARM_PROJECT.goal,titel:FARM_PROJECT.titel,steps:FARM_PROJECT.steps.map(s=>Object.assign({done:false},s)),cur:0,code:FARM_PROJECT.code,chat:[]};save();renderMentor()};
+    box.append(preset);
+    const c=h(`<div class="card stack"><label for="goal"><b>Oder ein anderes Ziel: Was möchtest du bauen?</b><br><span class="muted" style="font-size:.9rem">Beschreib es in einem Satz. Der Mentor zerlegt es in kleine Schritte und leitet dich an, ohne dir die Lösung vorzusagen.</span></label><textarea id="goal" class="field" placeholder="z. B. Ein Programm, das meine Trainingszeiten der Woche zusammenrechnet"></textarea><div class="ideas"></div><div class="row" style="justify-content:space-between"><label class="row muted" style="font-size:.9rem"><span>Mein Stand:</span><select id="lvl" class="field" style="width:auto;padding:6px 8px"><option>ganz neu</option><option selected>ein paar Lektionen gemacht</option><option>Grundlagen sitzen</option></select></label><button class="btn" id="plan" type="button" ${sampleState!=="ok"?"disabled":""}>Plan erstellen</button></div><div id="planmsg"></div></div>`);
+    IDEAS.forEach(t=>{const b=h(`<button class="idea" type="button">${esc(t)}</button>`);b.onclick=()=>{$("#goal",c).value=t};$(".ideas",c).append(b)});
+    box.append(c);
+    $("#plan",c).onclick=async()=>{const goal=$("#goal",c).value.trim();if(!goal){$("#goal",c).focus();return}
+      const btn=$("#plan",c),msg=$("#planmsg",c);btn.disabled=true;msg.innerHTML='<p class="notice">Der Mentor plant dein Projekt. Das dauert etwa eine halbe Minute …</p>';
+      try{const plan=await sampleFn.json(`${rules()}\n\nMicha möchte dieses Projekt in Python bauen: "${goal}". Sein Stand: ${$("#lvl",c).value}.\nZerlege es in 4 bis 7 kleine, aufeinander aufbauende Schritte. Jeder Schritt soll in 10-20 Minuten machbar sein und am Ende ein lauffähiges Zwischenergebnis haben. Passe den Umfang an, damit es im Browser mit Skulpt läuft (keine Dateien, kein Internet).\nAntworte NUR mit JSON in dieser Form:\n{"titel":"kurzer Projektname","schritte":[{"titel":"…","aufgabe":"Was genau soll das Programm nach diesem Schritt können (2-3 Sätze)","lernt":"welches Python-Konzept geübt wird"}],"startcode":"# ein paar Kommentarzeilen als Gerüst, KEINE Lösung"}`,{modelTier:"default"});
+        if(!plan||!Array.isArray(plan.schritte)||!plan.schritte.length)throw{code:"invalid_json"};
+        S.mentor={goal,titel:String(plan.titel||goal),steps:plan.schritte.slice(0,8).map(x=>({titel:String(x.titel||"Schritt"),aufgabe:String(x.aufgabe||""),lernt:String(x.lernt||""),done:false})),cur:0,code:String(plan.startcode||"# Los geht's\n"),chat:[]};
+        addXP(5);save();renderMentor()}
+      catch(e){msg.innerHTML='<p class="feedback bad">'+esc(sampleErr(e))+"</p>";btn.disabled=false}};
+    return}
+
+  const cur=M.steps[M.cur];
+  const head=h(`<div class="card stack"><div class="row" style="justify-content:space-between"><div style="min-width:0"><span class="eyebrow">Projekt</span><h3 style="font-size:1.2rem">${esc(M.titel)}</h3></div><button class="btn ghost small" id="reset" type="button">Neues Ziel</button></div><ol class="steps"></ol></div>`);
+  M.steps.forEach((s,i)=>{const li=h(`<li class="${s.done?"done":""}"><button type="button" ${i===M.cur?'aria-current="step"':""}><span class="n">${s.done?"✓":i+1}</span><span>${esc(s.titel)}</span></button></li>`);$("button",li).onclick=()=>{M.cur=i;save();renderMentor()};$(".steps",head).append(li)});
+  let confirmReset=false;$("#reset",head).onclick=e=>{if(!confirmReset){confirmReset=true;e.target.textContent="Wirklich? Tippen zum Bestätigen";return}S.mentor=null;save();renderMentor()};
+  box.append(head);
+  box.append(h(`<div class="card stack" style="gap:8px"><span class="eyebrow">Schritt ${M.cur+1} von ${M.steps.length}${cur.lernt?" · übt: "+esc(cur.lernt):""}</span><h3>${esc(cur.titel)}</h3><p>${esc(cur.aufgabe)}</p></div>`));
+  projectIDE=makeIDE(M.code,"projekt.py");projectIDE.ta.style.minHeight="220px";
+  projectIDE.ta.addEventListener("input",()=>{M.code=projectIDE.ta.value;save()});
+  box.append(projectIDE.el);
+
+  const ladder=h(`<div class="ladder"><button class="btn ghost small" data-k="frage" type="button">Denkanstoß</button><button class="btn ghost small" data-k="tipp" type="button">Konkreter Tipp</button><button class="btn ghost small" data-k="code" type="button">Teil-Code zeigen</button><button class="btn small" data-k="check" type="button">Schritt prüfen</button></div>`);
+  box.append(ladder);
+  const chat=h(`<div class="chat" aria-live="polite"></div>`);box.append(chat);
+  const form=h(`<form class="row" style="flex-wrap:nowrap"><input id="ask" class="field" placeholder="Frag den Mentor …" autocomplete="off"><button class="btn" type="submit">Senden</button></form>`);box.append(form);
+  const stop=h(`<button class="btn ghost small" type="button" hidden>Stopp</button>`);box.append(stop);stop.onclick=()=>mentorCtl?.abort();
+  const draw=()=>{chat.innerHTML="";M.chat.slice(-12).forEach(m=>chat.append(h(`<div class="msg ${m.role==="user"?"me":"ai"}"><div class="who">${m.role==="user"?"Du":"Mentor"}</div>${m.role==="user"?"<p>"+esc(m.show||m.content)+"</p>":md(m.content)}</div>`)))};draw();
+  const disabled=sampleState!=="ok";ladder.querySelectorAll("button").forEach(b=>b.disabled=disabled);$("button",form).disabled=disabled;
+
+  async function talk(show,instruction){
+    const r=projectIDE.last;
+    const ctx=`Sein Niveau: ${(()=>{const t=Object.keys(SKILLS).filter(k=>S.skill[k]);return t.length?t.map(k=>SKILLS[k]+" "+S.skill[k].s+"/100").join(", "):"noch keine Lektionen"})()}. Passe Erklärtiefe und Hinweise daran an.\nProjekt: ${M.titel} (Ziel: ${M.goal})\nAktueller Schritt ${M.cur+1}/${M.steps.length}: ${cur.titel} – ${cur.aufgabe}\nSein aktueller Code:\n\`\`\`python\n${projectIDE.ta.value}\n\`\`\`\nLetzte Ausführung: ${r?(r.ok?"ok, Ausgabe:\n"+(r.output||"(keine)").slice(0,1500):"Fehler: "+r.error):"noch nicht ausgeführt"}`;
+    M.chat.push({role:"user",content:instruction+"\n\n"+ctx,show});draw();
+    const bubble=h(`<div class="msg ai"><div class="who">Mentor</div><p class="muted">Denkt nach …</p></div>`);chat.append(bubble);
+    mentorCtl=new AbortController();stop.hidden=false;ladder.querySelectorAll("button").forEach(b=>b.disabled=true);
+    const turns=[{role:"user",content:rules()},...M.chat.slice(-10).map(m=>({role:m.role,content:m.content}))];
+    if(turns[1]&&turns[1].role==="assistant")turns.splice(1,1);
+    try{const {text}=await sampleFn(turns,{cache:false,signal:mentorCtl.signal,onText:({text})=>{bubble.innerHTML='<div class="who">Mentor</div>'+md(text)}});
+      M.chat.push({role:"assistant",content:text});addXP(1)}
+    catch(e){M.chat.pop();if(e.code!=="cancelled")bubble.innerHTML='<div class="who">Mentor</div><p>'+esc(sampleErr(e))+"</p>";else bubble.remove()}
+    stop.hidden=true;ladder.querySelectorAll("button").forEach(b=>b.disabled=false);save()}
+
+  ladder.onclick=async e=>{const k=e.target.dataset?.k;if(!k)return;
+    if(k==="check"){if(!projectIDE.last)await projectIDE.run();
+      const r=projectIDE.last;e.target.disabled=true;const bubble=h(`<div class="msg ai"><div class="who">Mentor</div><p class="muted">Prüft deinen Schritt …</p></div>`);chat.append(bubble);
+      try{const v=await sampleFn.json(`${rules()}\n\nPrüfe, ob Micha diesen Schritt erfüllt hat. Sei fair: kleine Abweichungen in Formulierungen sind ok, die Funktion zählt.\nSchritt: ${cur.titel} – ${cur.aufgabe}\nCode:\n${projectIDE.ta.value}\nAusgabe beim Ausführen:\n${r.ok?(r.output||"(keine)").slice(0,1500):"Fehler: "+r.error}\nAntworte NUR mit JSON: {"bestanden":true|false,"feedback":"2-3 Sätze: was gut ist, was noch fehlt (ohne Lösung)"}`,{modelTier:"default",cache:false});
+        const ok=!!v.bestanden;bubble.innerHTML='<div class="who">Mentor · '+(ok?"Schritt geschafft":"noch nicht ganz")+"</div>"+md(String(v.feedback||""));
+        M.chat.push({role:"user",content:"Prüfe meinen Schritt.",show:"Schritt prüfen"},{role:"assistant",content:(ok?"Schritt geschafft. ":"Noch nicht ganz. ")+String(v.feedback||"")});
+        if(ok&&!cur.done){cur.done=true;addXP(15);if(M.cur<M.steps.length-1)M.cur++;save();setTimeout(renderMentor,1600)}else save()}
+      catch(err){bubble.innerHTML='<div class="who">Mentor</div><p>'+esc(sampleErr(err))+"</p>"}e.target.disabled=false;return}
+    const map={frage:["Denkanstoß bitte","Gib mir nur einen Denkanstoß in Form einer Frage, wie ich weiterkomme. Kein Code."],tipp:["Konkreter Tipp bitte","Gib mir einen konkreten Tipp, welcher Befehl oder welches Konzept mir hier hilft. Höchstens eine Zeile Code als Muster, nicht meine Lösung."],code:["Teil-Code bitte","Zeig mir einen kleinen Teil des Codes für diesen Schritt (höchstens 5 Zeilen) und erkläre ihn. Den Rest soll ich selbst schreiben."]};
+    await talk(...map[k])};
+  form.onsubmit=async e=>{e.preventDefault();const q=$("#ask",form).value.trim();if(!q)return;$("#ask",form).value="";await talk(q,q)};
+}
+
+/* ---------- Spielwiese ---------- */
+function renderPlay(){
+  const box=$("#tab-play");if(box.dataset.ready)return;box.dataset.ready=1;
+  box.append(h(`<div class="stack" style="gap:6px"><span class="eyebrow">Spielwiese</span><h2>Freies Python</h2><p class="muted">Probier hier aus, was du willst. <code>input()</code> fragt dich in der Konsole. Die Pi-Hardware ist simuliert.</p></div>`));
+  const ide=makeIDE(`import board\nimport adafruit_dht\nfrom gpiozero import OutputDevice\n\nsensor = adafruit_dht.DHT22(board.D4)\nluefter = OutputDevice(27)\n\nfor runde in range(8):\n    try:\n        t = sensor.temperature\n        rh = sensor.humidity\n        if rh > 85:\n            luefter.on()\n        elif rh < 75:\n            luefter.off()\n        zustand = "AN" if luefter.is_active else "AUS"\n        print(f"Runde {runde}: {t} °C, {rh} %, Lüfter {zustand}")\n    except RuntimeError:\n        print(f"Runde {runde}: Messfehler")\nluefter.off()\n`,"spielwiese.py");
+  ide.ta.style.minHeight="260px";box.append(ide.el);
+  box.append(h(`<div class="card ref"><span class="eyebrow">Simulierte Hardware</span><dl style="margin:4px 0 0"><dt>from gpiozero import OutputDevice</dt><dd>OutputDevice(pin, active_high=True) mit .on(), .off(), .toggle(), .value (1 oder 0), .is_active</dd><dt>import board</dt><dd>Pins wie board.D4, board.D17, board.SDA</dd><dt>import adafruit_dht</dt><dd>adafruit_dht.DHT22(board.D4) mit .temperature und .humidity. Feste Beispielwerte, jede 4. Messung wirft einen RuntimeError wie beim echten Sensor.</dd><dt>import time</dt><dd>time.sleep() wartet wirklich. Halte die Pausen hier kurz, Programme werden nach 15 Sekunden gestoppt.</dd></dl></div>`))}
+
+/* ---------- Tabs ---------- */
+let currentTab="path";
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{currentTab=b.dataset.tab;
+  document.querySelectorAll("[data-tab]").forEach(x=>x.setAttribute("aria-selected",x===b));
+  ["path","mentor","play"].forEach(t=>$("#tab-"+t).hidden=t!==currentTab);
+  if(currentTab==="mentor")renderMentor();if(currentTab==="play")renderPlay();if(currentTab==="path")renderPath();window.scrollTo(0,0)});
+renderStats();renderPath();$("#gear").onclick=openSettings;
+</script>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+</script>
+</body>
+</html>

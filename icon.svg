@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1D5FA8"/><stop offset="1" stop-color="#0F2F57"/></linearGradient>
+<radialGradient id="w" cx=".5" cy=".38" r=".7"><stop offset="0" stop-color="#16405F"/><stop offset="1" stop-color="#0A1C2A"/></radialGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#g)"/>
+<g transform="translate(256 256) scale(1.0) translate(-256 -256)">
+<circle cx="256" cy="256" r="170" fill="url(#w)"/>
+<circle cx="256" cy="256" r="170" fill="none" stroke="#E3A41A" stroke-width="30"/>
+<circle cx="256" cy="256" r="146" fill="none" stroke="#F3C766" stroke-opacity=".35" stroke-width="4"/>
+<g fill="#E3A41A"><circle cx="444" cy="256" r="11"/><circle cx="68" cy="256" r="11"/><circle cx="256" cy="444" r="11"/><circle cx="256" cy="68" r="11"/><circle cx="388.9348" cy="388.9348" r="11"/><circle cx="123.0652" cy="388.9348" r="11"/><circle cx="388.9348" cy="123.0652" r="11"/><circle cx="123.0652" cy="123.0652" r="11"/></g>
+<path d="M196 206 L146 256 L196 306 M316 206 L366 256 L316 306" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M276 186 L236 326" fill="none" stroke="#E3A41A" stroke-width="28" stroke-linecap="round"/>
+<path d="M168 352 Q256 332 344 352" fill="none" stroke="#5EA2EC" stroke-opacity=".55" stroke-width="10" stroke-linecap="round"/>
+</g></svg>
