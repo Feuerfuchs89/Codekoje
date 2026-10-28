@@ -1,5 +1,5 @@
-// Codekoje Service Worker – macht die App offline nutzbar (Version 4b1f8201)
-const CACHE = "codekoje-4b1f8201";
+// Codekoje Service Worker – macht die App offline nutzbar (Version 8a7edf60)
+const CACHE = "codekoje-8a7edf60";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "icon-180.png"];
 const CDN = ["https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt.min.js", "https://cdn.jsdelivr.net/npm/skulpt@1.2.0/dist/skulpt-stdlib.js"];
 self.addEventListener("install", e => {
