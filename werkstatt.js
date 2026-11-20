@@ -178,7 +178,7 @@ const E = {
         value: "", mode: "python", lineNumbers: true, indentUnit: 4, tabSize: 4, indentWithTabs: false,
         matchBrackets: true, autoCloseBrackets: true, styleActiveLine: true, lineWrapping: false,
         gutters: ["CodeMirror-linenumbers", "fehler"], viewportMargin: 50,
-        inputStyle: "contenteditable", spellcheck: false, autocorrect: false, autocapitalize: false,
+        spellcheck: false, autocorrect: false, autocapitalize: false,
         extraKeys: {
           "Tab": (cm) => cm.somethingSelected() ? cm.indentSelection("add") : cm.replaceSelection("    ", "end"),
           "Shift-Tab": (cm) => cm.indentSelection("subtract"),
@@ -189,8 +189,14 @@ const E = {
       });
       this.cm.on("change", () => this.aendern && this.aendern());
       this.cm.on("inputRead", (cm, ch) => {
-        if (ch.text[0] === "." && cm.getOption("mode") === "python") setTimeout(() => E.vorschlag(), 30);
+        if (cm.getOption("mode") !== "python" || cm.state.completionActive) return;
+        const t = ch.text.join("\n");
+        const c = cm.getCursor(), vor = cm.getLine(c.line).slice(0, c.ch);
+        if (imTextOderKommentar(vor)) return;
+        if (t === ".") { if (/[\w\])]\.$/.test(vor)) setTimeout(() => E.vorschlag(), 20); return; }
+        if (/^\w$/.test(t) && /(^|[^\w.])[A-Za-z_]\w$/.test(vor)) E.vorschlag(); // ab 2 Buchstaben
       });
+      this.cm.on("cursorActivity", () => leisteSpaeter());
     } else {
       this.ta = document.createElement("textarea"); this.ta.className = "fallback";
       this.ta.spellcheck = false; this.ta.setAttribute("autocapitalize", "off"); this.ta.setAttribute("autocorrect", "off");
@@ -254,38 +260,111 @@ const E = {
   springe(zeile) { if (this.cm && zeile) { this.cm.setCursor({ line: zeile - 1, ch: 0 }); this.cm.scrollIntoView(null, 80); } },
   vorschlag() {
     if (!this.cm || !window.CodeMirror.showHint) return;
-    this.cm.showHint({ hint: jediHinweis, completeSingle: false, closeCharacters: /[\s()\[\]{};:>,=]/ });
+    this.cm.showHint({ hint: hinweis, completeSingle: false, closeCharacters: /[\s()\[\]{};:>,=+\-*\/%<"'#]/, alignWithWord: true });
   },
 };
 
-const PY_WOERTER = ("False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield " +
-  "print input len range int float str list dict set tuple open enumerate zip sorted sum min max abs round isinstance type map filter any all").split(" ");
-function jediHinweis(cm, fertig) {
+const PY_KEYWORDS = "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(" ");
+const PY_BUILTINS = ("print input len range int float str bool list dict set tuple open enumerate zip sorted reversed sum min max abs round " +
+  "isinstance type map filter any all format repr chr ord hex bin divmod pow help dir vars getattr setattr hasattr iter next super " +
+  "Exception ValueError TypeError KeyError IndexError RuntimeError ZeroDivisionError FileNotFoundError KeyboardInterrupt").split(" ");
+const PY_MODULE = "math random time datetime json csv os sys re statistics collections itertools pathlib numpy pandas matplotlib gpiozero board adafruit_dht w1thermsensor pisim RPi".split(" ");
+
+function imTextOderKommentar(vor) {
+  let q = null;
+  for (let i = 0; i < vor.length; i++) {
+    const ch = vor[i];
+    if (q) { if (ch === "\\") i++; else if (ch === q) q = null; }
+    else if (ch === "#") return true;
+    else if (ch === '"' || ch === "'") q = ch;
+  }
+  return !!q;
+}
+
+// Namen aus allen Projektdateien (für schnelle Vorschläge ohne Python)
+let namenCache = { stand: null, namen: [] };
+function projektNamen() {
+  if (!P) return [];
+  const text = Object.entries(P.dateien).filter(([n, v]) => n.endsWith(".py") && istText(v)).map(([, v]) => v).join("\n");
+  if (namenCache.stand === text) return namenCache.namen;
+  const n = new Set(text.match(/[A-Za-z_][A-Za-z0-9_]{2,}/g) || []);
+  Object.keys(P.dateien).filter((d) => d.endsWith(".py")).forEach((d) => n.add(d.replace(/\.py$/, "").split("/").pop()));
+  namenCache = { stand: text, namen: [...n] };
+  return namenCache.namen;
+}
+
+function lokaleVorschlaege(wort, vor) {
+  const nachImport = /^\s*(import|from)\s+\w*$/.test(vor);
+  const quelle = nachImport ? [...PY_MODULE, ...projektNamen()] : [...PY_KEYWORDS, ...PY_BUILTINS, ...PY_MODULE, ...projektNamen()];
+  const w = wort.toLowerCase();
+  const gesehen = new Set();
+  return quelle.filter((x) => { if (gesehen.has(x) || x === wort || !x.toLowerCase().startsWith(w)) return false; gesehen.add(x); return true; })
+    .sort((a, b) => (b.startsWith(wort) - a.startsWith(wort)) || (PY_BUILTINS.includes(b) + PY_KEYWORDS.includes(b)) - (PY_BUILTINS.includes(a) + PY_KEYWORDS.includes(a)) || a.length - b.length || a.localeCompare(b))
+    .slice(0, 30);
+}
+
+// Nach einem Punkt fragt Jedi (echtes Python) – das Ergebnis wird gemerkt und beim Weitertippen nur gefiltert
+let jediCache = { schluessel: null, liste: null, warten: null };
+function hinweis(cm, fertig) {
   const c = cm.getCursor(), zeile = cm.getLine(c.line);
   let s = c.ch; while (s > 0 && /\w/.test(zeile[s - 1])) s--;
-  const wort = zeile.slice(s, c.ch);
+  const wort = zeile.slice(s, c.ch), vor = zeile.slice(0, c.ch);
   const von = CodeMirror.Pos(c.line, s), bis = CodeMirror.Pos(c.line, c.ch);
-  const lokal = () => {
-    const woerter = new Set(PY_WOERTER);
-    (cm.getValue().match(/[A-Za-z_]\w{2,}/g) || []).forEach((w) => woerter.add(w));
-    const l = [...woerter].filter((w) => w.startsWith(wort) && w !== wort).sort().slice(0, 40);
-    fertig(l.length ? { list: l, from: von, to: bis } : null);
+  const nachPunkt = s > 0 && zeile[s - 1] === ".";
+  const alsListe = (l) => l.map((x) => ({
+    text: x.t, displayText: x.t,
+    render: (el) => { el.textContent = x.t; if (x.y) { const t = document.createElement("span"); t.className = "hinttyp"; t.textContent = TYPEN[x.y] || x.y; el.appendChild(t); } },
+  }));
+  if (!nachPunkt) {
+    if (!wort) return fertig(null);
+    const l = lokaleVorschlaege(wort, vor);
+    return fertig(l.length ? { list: l, from: von, to: bis } : null);
+  }
+  const schluessel = aktDatei + ":" + c.line + ":" + s + ":" + zeile.slice(0, s);
+  const filtern = (liste) => {
+    const l = liste.filter((x) => x.t.toLowerCase().startsWith(wort.toLowerCase()) && x.t !== wort);
+    fertig(l.length ? { list: alsListe(l), from: von, to: bis } : null);
   };
-  if (!bereit || laeuft) return lokal();
-  anfrage({ typ: "complete", code: cm.getValue(), zeile: c.line + 1, spalte: c.ch, pfad: projektPfad(aktDatei) }, 6000)
-    .then((r) => {
-      const l = (r.liste || []).map((x) => ({
-        text: x.t, displayText: x.t,
-        render: (el) => { el.textContent = x.t; const t = document.createElement("span"); t.className = "hinttyp"; t.textContent = TYPEN[x.y] || x.y; el.appendChild(t); },
-      }));
-      if (!l.length) return lokal();
-      fertig({ list: l, from: von, to: bis });
-    }).catch(lokal);
+  if (jediCache.schluessel === schluessel && jediCache.liste) return filtern(jediCache.liste);
+  if (!bereit || laeuft) return fertig(null);
+  if (jediCache.schluessel === schluessel && jediCache.warten) return jediCache.warten.then(() => filtern(jediCache.liste || []));
+  jediCache = { schluessel, liste: null, warten: null };
+  const code = cm.getRange(CodeMirror.Pos(0, 0), CodeMirror.Pos(c.line, s)) + cm.getRange(CodeMirror.Pos(c.line, c.ch), CodeMirror.Pos(cm.lastLine()));
+  jediCache.warten = anfrage({ typ: "complete", code, zeile: c.line + 1, spalte: s, pfad: projektPfad(aktDatei) }, 20000)
+    .then((r) => { jediCache.liste = r.liste || []; })
+    .catch(() => { jediCache.liste = []; });
+  jediCache.warten.then(() => {
+    // nur anzeigen, wenn der Cursor noch an derselben Stelle ist
+    const c2 = cm.getCursor();
+    if (c2.line !== c.line || c2.ch < s) return fertig(null);
+    const w2 = cm.getLine(c.line).slice(s, c2.ch);
+    const l = jediCache.liste.filter((x) => x.t.toLowerCase().startsWith(w2.toLowerCase()) && x.t !== w2);
+    fertig(l.length ? { list: alsListe(l), from: CodeMirror.Pos(c.line, s), to: c2 } : null);
+  });
 }
-jediHinweis.async = true;
+hinweis.async = true;
+
+// Vorschlagsleiste über den Handy-Tasten (wie in der Codekoje)
+let leisteTimer = null;
+function leisteSpaeter() { clearTimeout(leisteTimer); leisteTimer = setTimeout(leisteZeigen, 120); }
+function leisteZeigen() {
+  const box = $("vorschlaege"); if (!box || !E.cm || window.innerWidth > 820) return;
+  box.innerHTML = "";
+  const cm = E.cm, c = cm.getCursor(), zeile = cm.getLine(c.line);
+  let s = c.ch; while (s > 0 && /\w/.test(zeile[s - 1])) s--;
+  const wort = zeile.slice(s, c.ch), vor = zeile.slice(0, c.ch);
+  if (!wort || cm.getOption("mode") !== "python" || imTextOderKommentar(vor) || (s > 0 && zeile[s - 1] === ".")) return;
+  lokaleVorschlaege(wort, vor).slice(0, 4).forEach((v, i) => {
+    const b = document.createElement("button"); b.className = "sugg" + (i === 0 ? " first" : ""); b.type = "button"; b.textContent = v;
+    b.onmousedown = (e) => e.preventDefault();
+    b.onclick = () => { cm.replaceRange(v, CodeMirror.Pos(c.line, s), c); cm.focus(); };
+    box.appendChild(b);
+  });
+}
 const TYPEN = { function: "Funktion", module: "Modul", class: "Klasse", instance: "Objekt", keyword: "Schlüsselwort", statement: "Variable", param: "Parameter", property: "Eigenschaft", path: "Pfad" };
 
 /* Extra-Tasten fürs Handy */
+$("tasten").insertAdjacentHTML("afterbegin", '<span id="vorschlaege" style="display:contents"></span>');
 [["Tab", () => E.einruecken(false)], ["⇤", () => E.einruecken(true)], ["💡", () => E.vorschlag()], [":"], ["("], [")"], ["["], ["]"], ["{"], ["}"],
  ["\""], ["'"], ["="], ["=="], ["#"], ["_"], ["."], [","], ["+"], ["-"], ["*"], ["/"], ["<"], [">"], ["f\"\"", () => { E.einfuegen('f""'); if (E.cm) E.cm.execCommand("goCharLeft"); }],
  ["↶", () => E.rueck()], ["⌫ Zeile", () => E.zeileLoeschen()]].forEach(([k, fn]) => {
