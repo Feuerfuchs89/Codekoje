@@ -246,7 +246,10 @@ textarea.field{min-height:84px;resize:vertical}
 
 /* Tableiste */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
-nav.tabs .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
+nav.tabs .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav.tabs a.tablink{padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;font:600 .78rem var(--f-body);color:var(--muted);text-decoration:none}
+nav.tabs a.tablink svg{width:22px;height:22px}
+.wsbtn{background:transparent;color:var(--signal);border:1px solid #6B5418;border-radius:7px;padding:5px 10px;font:600 .75rem var(--f-mono);text-transform:none;letter-spacing:0;white-space:nowrap}
 nav.tabs button{background:none;border:0;padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;font:600 .78rem var(--f-body);color:var(--muted)}
 nav.tabs button[aria-selected="true"]{color:var(--accent)}
 nav.tabs svg{width:22px;height:22px}
@@ -289,6 +292,8 @@ window.SK_READY=new Promise(done=>{
   <button role="tab" data-tab="path" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>Lernpfad</button>
   <button role="tab" data-tab="mentor" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Mentor</button>
   <button role="tab" data-tab="play" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>Spielwiese</button>
+
+  <a class="tablink" href="werkstatt.html" id="toWerkstatt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>Werkstatt</a>
 </div></nav>
 
 <script>
@@ -394,7 +399,7 @@ function attachAssist(ta,el){
   ta.addEventListener("keydown",e=>{if(e.key==="Tab"&&cur.items.length&&(cur.prefix||ta.value[ta.selectionStart-1]===".")){e.preventDefault();e.stopImmediatePropagation();const p=ta.selectionStart;insertAt(ta,p-cur.prefix.length,p,cur.items[0].ins);refresh()}},true);
   refresh()}
 function makeIDE(start,label="main.py",opts={}){
-  const el=h(`<div class="ide"><div class="bar"><span>${label}</span><span class="row" style="gap:6px;flex-wrap:nowrap"><button class="stepbtn" type="button" title="Code Zeile für Zeile ansehen" aria-label="Schritt für Schritt ansehen">Schritte</button><button class="runbtn" type="button">▶ Ausführen</button></span></div><div class="edwrap"><pre class="gutter" aria-hidden="true"></pre><textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python-Code"></textarea></div><div class="console" aria-live="polite"><span class="dim">Ausgabe erscheint hier.</span></div><div class="farm" hidden></div></div>`);
+  const el=h(`<div class="ide"><div class="bar"><span>${label}</span><span class="row" style="gap:6px;flex-wrap:nowrap"><button class="wsbtn" type="button" title="Diesen Code in der Werkstatt weiterbauen (echtes Python, Projekte, Pakete)">Werkstatt</button><button class="stepbtn" type="button" title="Code Zeile für Zeile ansehen" aria-label="Schritt für Schritt ansehen">Schritte</button><button class="runbtn" type="button">▶ Ausführen</button></span></div><div class="edwrap"><pre class="gutter" aria-hidden="true"></pre><textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python-Code"></textarea></div><div class="console" aria-live="polite"><span class="dim">Ausgabe erscheint hier.</span></div><div class="farm" hidden></div></div>`);
   const ta=$("textarea",el),con=$(".console",el),gut=$(".gutter",el);ta.value=start||"";
   let errLine=0;
   const drawGut=()=>{const n=ta.value.split("\n").length;let t="";for(let i=1;i<=n;i++)t+=(i===errLine?`<b>${i}</b>`:i)+"\n";gut.innerHTML=t;gut.scrollTop=ta.scrollTop};
@@ -423,8 +428,16 @@ function makeIDE(start,label="main.py",opts={}){
       api.last=r;return r},
     setCode(c){ta.value=c;drawGut()}};
   $(".runbtn",el).onclick=()=>api.run();
+  $(".wsbtn",el).onclick=()=>inWerkstatt(ta.value,label,opts.ws||{});
   $(".stepbtn",el).onclick=()=>{if(!el.querySelector(".trace"))openTrace(api)};
   return api}
+
+/* ---------- Werkstatt: Code übergeben ---------- */
+function inWerkstatt(code,name,ws){
+  let datei=String(name||"uebung.py").toLowerCase().replace(/[äöüß]/g,c=>({ä:"ae",ö:"oe",ü:"ue",ß:"ss"}[c])).replace(/[^a-z0-9_.\-]+/g,"_");
+  if(!datei.endsWith(".py"))datei+=".py";
+  try{localStorage.setItem("pykoje:import",JSON.stringify({code:String(code||""),name:datei,projekt:ws.projekt||"Codekoje-Übungen",ziel:ws.ziel||""}))}catch(e){}
+  location.href="werkstatt.html#import"}
 
 /* ---------- Brücke Python → Seite (Simulator und Schritt-Ansicht) ---------- */
 const FARM_JS=`var $builtinmodule=function(name){var mod={};var js=function(x){return Sk.ffi.remapToJs(x)};
@@ -686,7 +699,8 @@ Regeln:
 - Der Code läuft im Browser mit Skulpt (Python 3 Teilmenge): keine Dateien, kein Internet, keine pip-Pakete, kein sqlite3. print(), input(), random, math, time.sleep (kurz halten), Listen, Dicts, Funktionen, Klassen, try/except/finally gehen.
 - Sein großes Ziel: eine modulare Indoor-Farm im Keller, gesteuert von einem Raspberry Pi 4 (Zonen: Microgreens, Kräuter, Pilze, Radieschen; DHT22, kapazitive Bodenfeuchte über ADS1115, Relais für Grow-Light, 12-V-Lüfter, Vernebler, Pumpe; Lichtzyklen, Hysterese, Bewässerung, Logging in SQLite, Grafana).
 - Im Browser sind diese Pi-Module simuliert und genauso nutzbar wie auf dem echten Pi: gpiozero.OutputDevice(pin, active_high=True) mit .on(), .off(), .toggle(), .value (1/0), .is_active; board.D4 usw.; adafruit_dht.DHT22(board.D4) mit .temperature und .humidity (feste Beispielwerte, jede 4. Messung wirft RuntimeError). Schreib Code so, dass er später unverändert auf dem Pi läuft. Wo der echte Pi etwas anderes braucht (datetime.now().hour, sqlite3, ADS1115), sag es kurz dazu.
-- Sicherheit: 230 V nur durch Elektrofachkraft, Aktoren im finally abschalten, Pumpe zeitlich begrenzen.`;
+- Sicherheit: 230 V nur durch Elektrofachkraft, Aktoren im finally abschalten, Pumpe zeitlich begrenzen.
+- Für größere Vorhaben gibt es in der Codekoje die "Werkstatt" (vierter Tab): echtes Python mit Projekten aus mehreren Dateien, PyPI-Paketen, GitHub und Pi-Simulator. Jeder Editor hat einen Knopf "Werkstatt", der den Code dorthin mitnimmt. Empfiehl sie, wenn Skulpt an Grenzen stößt.`;
 const FARM_PROJECT={goal:"Steuerung v1.0 für die Kellerfarm (Zone 1 Microgreens)",titel:"Kellerfarm v1.0",steps:[
   {titel:"Sensor-Funktion",aufgabe:"Schreib eine Funktion messen(sensor), die bis zu 3-mal versucht, Temperatur und Feuchte zu lesen. Sie gibt (temp, rh) zurück oder None, wenn alle Versuche scheitern. Teste sie mit 5 Aufrufen.",lernt:"Funktionen, try/except, return"},
   {titel:"Lichtzyklus Zone 1",aufgabe:"Grow-Light an GPIO 17 (Relais schaltet bei LOW). Licht ab 6 Uhr für 16 Stunden. Simuliere die Stunden 0 bis 23 und gib aus, wann das Licht an ist.",lernt:"gpiozero, active_high, Modulo"},
@@ -1015,7 +1029,7 @@ function renderMentor(){
   let confirmReset=false;$("#reset",head).onclick=e=>{if(!confirmReset){confirmReset=true;e.target.textContent="Wirklich? Tippen zum Bestätigen";return}S.mentor=null;save();renderMentor()};
   box.append(head);
   box.append(h(`<div class="card stack" style="gap:8px"><span class="eyebrow">Schritt ${M.cur+1} von ${M.steps.length}${cur.lernt?" · übt: "+esc(cur.lernt):""}</span><h3>${esc(cur.titel)}</h3><p>${esc(cur.aufgabe)}</p></div>`));
-  projectIDE=makeIDE(M.code,"projekt.py");projectIDE.ta.style.minHeight="220px";
+  projectIDE=makeIDE(M.code,"projekt.py",{ws:{projekt:M.titel,ziel:M.goal}});projectIDE.ta.style.minHeight="220px";
   projectIDE.ta.addEventListener("input",()=>{M.code=projectIDE.ta.value;save()});
   box.append(projectIDE.el);
 
@@ -1057,7 +1071,8 @@ function renderMentor(){
 function renderPlay(){
   const box=$("#tab-play");if(box.dataset.ready)return;box.dataset.ready=1;
   box.append(h(`<div class="stack" style="gap:6px"><span class="eyebrow">Spielwiese</span><h2>Freies Python</h2><p class="muted">Probier hier aus, was du willst. <code>input()</code> fragt dich in der Konsole. Die Pi-Hardware ist simuliert.</p></div>`));
-  const ide=makeIDE(`import board\nimport adafruit_dht\nfrom gpiozero import OutputDevice\n\nsensor = adafruit_dht.DHT22(board.D4)\nluefter = OutputDevice(27)\n\nfor runde in range(8):\n    try:\n        t = sensor.temperature\n        rh = sensor.humidity\n        if rh > 85:\n            luefter.on()\n        elif rh < 75:\n            luefter.off()\n        zustand = "AN" if luefter.is_active else "AUS"\n        print(f"Runde {runde}: {t} °C, {rh} %, Lüfter {zustand}")\n    except RuntimeError:\n        print(f"Runde {runde}: Messfehler")\nluefter.off()\n`,"spielwiese.py");
+  const wsHint=h(`<a class="card daily" href="werkstatt.html" style="text-decoration:none;color:inherit"><div class="daily-txt"><span class="eyebrow">Neu · Werkstatt</span><b>Größere Projekte mit echtem Python</b><span class="muted" style="font-size:.9rem">Mehrere Dateien, Pakete wie numpy und pandas, Pi-Simulator mit Reglern, GitHub-Abgleich.</span></div><span class="btn small">Öffnen</span></a>`);box.append(wsHint);
+  const ide=makeIDE(`import board\nimport adafruit_dht\nfrom gpiozero import OutputDevice\n\nsensor = adafruit_dht.DHT22(board.D4)\nluefter = OutputDevice(27)\n\nfor runde in range(8):\n    try:\n        t = sensor.temperature\n        rh = sensor.humidity\n        if rh > 85:\n            luefter.on()\n        elif rh < 75:\n            luefter.off()\n        zustand = "AN" if luefter.is_active else "AUS"\n        print(f"Runde {runde}: {t} °C, {rh} %, Lüfter {zustand}")\n    except RuntimeError:\n        print(f"Runde {runde}: Messfehler")\nluefter.off()\n`,"spielwiese.py",{ws:{projekt:"Spielwiese"}});
   ide.ta.style.minHeight="260px";box.append(ide.el);
   const ex=h(`<div class="row end"><button class="btn ghost small" type="button">Als farm.py für den Pi</button></div>`);$("button",ex).onclick=()=>openPiExport(ide.ta.value,"Spielwiese");box.append(ex);
   box.append(h(`<div class="card ref"><span class="eyebrow">Simulierte Hardware</span><dl style="margin:4px 0 0"><dt>from gpiozero import OutputDevice</dt><dd>OutputDevice(pin, active_high=True) mit .on(), .off(), .toggle(), .value (1 oder 0), .is_active</dd><dt>import board</dt><dd>Pins wie board.D4, board.D17, board.SDA</dd><dt>import adafruit_dht</dt><dd>adafruit_dht.DHT22(board.D4) mit .temperature und .humidity. Feste Beispielwerte, jede 4. Messung wirft einen RuntimeError wie beim echten Sensor.</dd><dt>import time</dt><dd>time.sleep() wartet wirklich. Halte die Pausen hier kurz, Programme werden nach 15 Sekunden gestoppt.</dd></dl></div>`))}
@@ -1069,6 +1084,10 @@ document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{currentTab=b.d
   ["path","mentor","play"].forEach(t=>$("#tab-"+t).hidden=t!==currentTab);
   if(currentTab==="mentor")renderMentor();if(currentTab==="play")renderPlay();if(currentTab==="path")renderPath();window.scrollTo(0,0)});
 renderStats();renderPath();$("#gear").onclick=openSettings;$("#who").onclick=openProfiles;renderProfileChip();save();
+function tabAusAdresse(){const t=location.hash.slice(1);if(!t)return;
+  if(t==="einstellungen"){history.replaceState(null,"",location.pathname);openSettings();return}
+  const b=document.querySelector(`[data-tab="${t}"]`);if(b){history.replaceState(null,"",location.pathname);b.click()}}
+tabAusAdresse();window.addEventListener("hashchange",tabAusAdresse);
 </script>
 <script>
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}

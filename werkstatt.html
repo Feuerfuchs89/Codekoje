@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Werkstatt · Codekoje</title>
+<meta name="theme-color" content="#1D5FA8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Codekoje">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+<style>
+/* Farben & Schriften wie in der Codekoje */
+:root{
+  --bg:#EDF1F0; --surface:#FFFFFF; --sunk:#E1E8E7; --line:#C9D4D3;
+  --ink:#10232D; --muted:#4E626B;
+  --accent:#1D5FA8; --accent-ink:#FFFFFF; --signal:#E3A41A;
+  --ok:#1E7D4F; --ok-bg:#DDF0E5; --err:#B3362B; --err-bg:#F8E1DE;
+  --code-bg:#0F1E26; --code-ink:#DCE7EA; --code-muted:#7E949D; --code-line:#2A414B; --code-btn:#1B2E37;
+  --f-display:"Familjen Grotesk","Segoe UI",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Menlo,monospace;
+  --r:12px; --ed:14px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C1A21; --surface:#13252E; --sunk:#0A161C; --line:#25404B;
+  --ink:#E4EEF0; --muted:#97AEB6; --accent:#5EA2EC; --accent-ink:#06131A; --signal:#F0B93A;
+  --ok:#5CC994; --ok-bg:#12352A; --err:#F08A7E; --err-bg:#3A1D1A;
+  --code-bg:#071015; --code-ink:#DCE7EA; --code-muted:#6E8791; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+code{font-family:var(--f-mono);font-size:.9em}
+:not(pre)>code{background:var(--sunk);padding:1px 5px;border-radius:5px}
+a{color:var(--accent)}
+.eyebrow{font:600 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* Knöpfe */
+.btn{border:0;border-radius:10px;padding:9px 14px;font-weight:700;background:var(--accent);color:var(--accent-ink);white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn.small{padding:6px 10px;font-size:.88rem}
+.gear{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);flex:none;padding:0}
+.runbtn{background:var(--signal);color:#1A1405;border:0;border-radius:8px;padding:8px 14px;font:700 .85rem var(--f-mono);white-space:nowrap}
+.runbtn:disabled{opacity:.45;cursor:not-allowed}
+.stoppbtn{background:transparent;color:var(--err);border:1.5px solid var(--err);border-radius:8px;padding:6px 12px;font:700 .85rem var(--f-mono)}
+.stoppbtn:disabled{opacity:.35;cursor:not-allowed}
+.field,select.field{border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:8px 10px;min-width:0}
+textarea.field{width:100%;min-height:70px;resize:vertical;font:14px/1.45 var(--f-body)}
+
+/* Kopf */
+header.top{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--line);flex:none}
+.brand{font:700 1.15rem/1 var(--f-display);display:flex;align-items:center;gap:8px;flex:none;color:var(--ink);text-decoration:none}
+.brand img{width:28px;height:28px;border-radius:7px}
+#projekt{flex:1;max-width:260px;font-weight:700;font-family:var(--f-display);font-size:1rem}
+#live{font:600 .7rem var(--f-mono);border-radius:99px;padding:3px 9px;border:1px solid var(--line);color:var(--muted);flex:none;cursor:pointer;background:var(--surface)}
+#live.an{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+#status{font:.78rem var(--f-mono);color:var(--muted);margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32vw}
+#status.ok{color:var(--ok)}
+
+/* Werkzeugleiste über dem Editor */
+.leiste{display:flex;gap:6px;align-items:center;padding:6px 8px 6px 12px;background:color-mix(in srgb,var(--code-bg) 80%,var(--code-ink));flex:none}
+#datei{flex:1;max-width:280px;background:var(--code-btn);color:var(--code-ink);border:1px solid var(--code-line);border-radius:8px;padding:6px 8px;font:600 .85rem var(--f-mono);min-width:0}
+.cbtn{background:var(--code-btn);color:var(--code-ink);border:1px solid var(--code-line);border-radius:8px;padding:5px 10px;font:600 .85rem var(--f-mono);flex:none}
+.sp{flex:1}
+
+main{flex:1;display:flex;min-height:0}
+#links{flex:1.2;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--code-bg)}
+#rechts{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;border-left:1px solid var(--line);background:var(--bg)}
+#edWrap{flex:1;min-height:0;position:relative;background:var(--code-bg)}
+#edWrap .CodeMirror{height:100%;background:var(--code-bg);color:var(--code-ink);font:var(--ed)/1.55 var(--f-mono)}
+#edWrap textarea.fallback{position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:0;background:var(--code-bg);color:var(--code-ink);padding:12px 14px;font:var(--ed)/1.55 var(--f-mono);white-space:pre;tab-size:4}
+#binaer{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--code-muted);padding:20px;background:var(--code-bg);z-index:5}
+#binaer img{max-width:100%;max-height:70%;display:block;margin:0 auto 10px;background:#fff;border-radius:6px}
+
+/* Code-Farben */
+.CodeMirror-gutters{background:var(--code-bg);border-right:1px solid #22363F}
+.CodeMirror-linenumber{color:var(--code-muted)}
+.CodeMirror-cursor{border-left:2px solid var(--signal)!important}
+.CodeMirror-activeline-background{background:#ffffff0a}
+.CodeMirror-selected,.CodeMirror-focused .CodeMirror-selected{background:#2a5a7a99!important}
+.CodeMirror-matchingbracket{color:var(--signal)!important;text-decoration:underline}
+.cm-keyword{color:#FF9E64}.cm-def{color:#7EE0FF}.cm-variable-2{color:#C3E88D}.cm-builtin{color:#8CC4F2}
+.cm-string{color:#C3E88D}.cm-number{color:#F78C6C}.cm-comment{color:var(--code-muted);font-style:italic}
+.cm-operator{color:#89DDFF}.cm-meta{color:#FFCB6B}.cm-property,.cm-variable{color:var(--code-ink)}.cm-atom{color:#F78C6C}
+.fehlerzeile{background:rgba(179,54,43,.28)}
+.CodeMirror-gutter.fehler{width:14px}
+.fehlermarke{color:#FF9B8E;font-size:12px;cursor:help;padding-left:2px}
+.CodeMirror-hints{background:var(--surface);border:1px solid var(--line);font:13px var(--f-mono);z-index:50;max-height:40vh;border-radius:8px;box-shadow:0 6px 20px #0003}
+.CodeMirror-hint{color:var(--ink);padding:5px 9px}
+li.CodeMirror-hint-active{background:var(--accent);color:var(--accent-ink)}
+.hinttyp{color:var(--muted);font-size:11px;margin-left:8px}
+li.CodeMirror-hint-active .hinttyp{color:inherit;opacity:.8}
+
+/* Handy-Tasten wie in der Codekoje */
+.tasten{display:flex;gap:6px;overflow-x:auto;padding:6px 8px;background:color-mix(in srgb,var(--code-bg) 88%,var(--code-ink));border-top:1px solid var(--code-line);scrollbar-width:none;flex:none}
+.tasten::-webkit-scrollbar{display:none}
+.tasten button{flex:none;font:600 .85rem var(--f-mono);color:var(--code-ink);background:var(--code-btn);border:1px solid var(--code-line);border-radius:7px;padding:5px 10px;min-height:32px;min-width:34px}
+
+/* Bereiche rechts */
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto;flex:none;scrollbar-width:none}
+.tabs button{border:0;background:none;padding:10px 13px;color:var(--muted);border-bottom:3px solid transparent;font:600 .9rem var(--f-body);white-space:nowrap}
+.tabs button.an{color:var(--accent);border-bottom-color:var(--accent)}
+.tab{display:none;flex:1;flex-direction:column;min-height:0}
+.tab.an{display:flex}
+
+/* Konsole */
+#ausgabe{flex:1;overflow:auto;padding:10px 14px;font:13.5px/1.5 var(--f-mono);white-space:pre-wrap;word-break:break-word;background:var(--code-bg);color:var(--code-ink)}
+#ausgabe .err{color:#FF9B8E} #ausgabe .info{color:var(--code-muted)} #ausgabe .ein{color:var(--signal)}
+#ausgabe img{max-width:100%;background:#fff;border-radius:8px;margin:6px 0;display:block}
+#ausgabe .aktion{font:600 .8rem var(--f-mono);margin:4px 0 8px;background:var(--signal);color:#1A1405;border:0;border-radius:7px;padding:5px 12px}
+.inrow{display:none;gap:6px;padding:6px 8px;background:var(--code-bg);border-top:1px dashed var(--signal)}
+.inrow.an{display:flex}
+.inrow input,.repl input{flex:1;min-width:0;background:var(--code-btn);color:var(--code-ink);border:1px solid var(--code-line);border-radius:7px;padding:7px 9px;font:13.5px var(--f-mono)}
+.inrow input{border-color:var(--signal)}
+.repl{display:flex;gap:6px;padding:6px 8px;background:color-mix(in srgb,var(--code-bg) 88%,var(--code-ink));border-top:1px solid var(--code-line)}
+
+.feld{padding:12px 14px 20px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px}
+.card h3{font:700 1.02rem var(--f-display);margin:0}
+.card p{margin:0;font-size:.9rem;color:var(--muted)}
+.zeile{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.zeile .field{flex:1;min-width:120px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--sunk);border:1px solid var(--line);font:600 .8rem var(--f-mono)}
+.chip button{border:0;background:none;padding:0 2px;color:var(--muted)}
+.chip.vor{cursor:pointer;background:var(--surface)}
+.chip.vor:hover{border-color:var(--accent)}
+
+/* Mentor */
+#chat{flex:1;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 14px;border-radius:12px;max-width:92%;font-size:.95rem;min-width:0;word-wrap:break-word}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink);white-space:pre-wrap}
+.msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line)}
+.msg.ai pre{background:var(--code-bg);color:var(--code-ink);font:13px/1.5 var(--f-mono);padding:10px;border-radius:8px;overflow-x:auto;margin:8px 0;position:relative}
+.msg.ai pre button{position:absolute;top:5px;right:5px;font:600 .7rem var(--f-mono);background:var(--code-btn);color:var(--code-ink);border:1px solid var(--code-line);border-radius:6px;padding:2px 7px}
+.msg.ai code{background:var(--sunk);padding:1px 5px;border-radius:5px}
+.msg.ai pre code{background:none;padding:0}
+.msg .who{font:600 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.msg.me .who{color:inherit;opacity:.8}
+.msg.denkt{color:var(--muted);font-style:italic}
+.ladder{display:flex;gap:6px;padding:8px 10px;background:var(--surface);border-top:1px solid var(--line);overflow-x:auto;flex:none;scrollbar-width:none}
+.ladder .btn{flex:none}
+.mentorein{display:flex;gap:6px;padding:8px 10px;background:var(--surface);border-top:1px solid var(--line);flex:none}
+.mentorein textarea{flex:1;min-height:42px;max-height:120px;resize:none}
+
+/* Pi-Simulator: Kacheln wie in der Codekoje */
+.farm{background:var(--code-bg);color:var(--code-ink);border-radius:var(--r);padding:12px}
+.farm-head{display:flex;justify-content:space-between;gap:8px;font:600 .72rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;color:var(--code-muted)}
+.farm-head .muted{text-transform:none;letter-spacing:0;color:var(--code-muted)}
+.farm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.tile{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:10px;background:#16262E;border:1px solid var(--code-line);color:var(--code-muted);transition:background .2s,border-color .2s,color .2s;text-align:left;font:inherit}
+.tile svg{grid-row:1/3}
+.tile div{display:flex;flex-direction:column;min-width:0;font-size:.8rem}
+.tile div b{color:var(--code-ink);font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile em{grid-column:2;font:700 .8rem var(--f-mono);font-style:normal}
+.tile.on{background:#3A2E0E;border-color:var(--signal);color:var(--signal);box-shadow:0 0 14px rgba(227,164,26,.35)}
+.tile.dht{color:#8CC4F2}
+.tile.err{border-color:var(--err);color:#FF9B8E}
+.tile.knopf{cursor:pointer}
+.tile.knopf.on{background:#12352A;border-color:#5CC994;color:#5CC994;box-shadow:0 0 14px rgba(92,201,148,.3)}
+.tile.spin svg{animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.leer{font:.85rem var(--f-body);color:var(--code-muted)}
+.regler{display:grid;grid-template-columns:1fr auto;gap:0 10px;align-items:center;font-size:.9rem;padding:4px 0}
+.regler input[type=range]{grid-column:1/3;width:100%;accent-color:var(--accent)}
+.regler b{font:600 .85rem var(--f-mono);color:var(--accent)}
+.regler small{color:var(--muted);font:.72rem var(--f-mono)}
+.schalter{display:flex;gap:8px;align-items:center;font-size:.9rem}
+.ref dt{font:600 .82rem var(--f-mono);margin-top:6px}
+.ref dd{margin:2px 0 0;color:var(--muted);font-size:.86rem}
+
+/* Tableiste der Codekoje */
+nav.tabsunten{flex:none;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabsunten .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav.tabsunten a{padding:7px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font:600 .74rem var(--f-body);color:var(--muted);text-decoration:none}
+nav.tabsunten a[aria-current="page"]{color:var(--accent)}
+nav.tabsunten svg{width:21px;height:21px}
+
+/* Dialoge */
+.modal{position:fixed;inset:0;background:rgba(6,19,26,.55);display:none;align-items:center;justify-content:center;z-index:99;padding:16px}
+.modal.an{display:flex}
+.modal .box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;width:min(480px,100%);max-height:90vh;overflow:auto;box-shadow:0 10px 40px #0004}
+.modal .box p{margin:0 0 10px}
+.modal .field{width:100%}
+.modal label{display:block;font-size:.88rem;color:var(--muted);margin:12px 0 4px}
+.knoepfe{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+/* Handy: untereinander */
+@media (max-width:820px){
+  main{flex-direction:column}
+  #rechts{border-left:0;border-top:1px solid var(--line);flex:0 0 44%}
+  body.nur-editor #rechts{display:none}
+  body.nur-ausgabe #links{display:none}
+  body.nur-ausgabe #rechts{flex:1}
+  .nurgross{display:none}
+}
+@media (min-width:821px){.nurklein{display:none}.tasten{display:none}}
+@media (prefers-reduced-motion:reduce){.tile.spin svg{animation:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="index.html#path" title="Zur Codekoje"><img src="icon.svg" alt=""><span class="nurgross">Werkstatt</span></a>
+  <select id="projekt" class="field" title="Projekt wählen"></select>
+  <span id="live" title="Live-Modus: input() fragt direkt nach, Stopp ohne Neustart">…</span>
+  <div id="status">startet …</div>
+  <button id="einst" class="gear" type="button" aria-label="Einstellungen"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+
+<main>
+  <section id="links">
+    <div class="leiste">
+      <select id="datei" title="Datei im Projekt"></select>
+      <button id="neueDatei" class="cbtn" type="button" title="Neue Datei">＋</button>
+      <button id="dateiMenu" class="cbtn" type="button" title="Datei umbenennen / löschen / herunterladen">⋯</button>
+      <span class="sp"></span>
+      <button id="layout" class="cbtn nurklein" type="button" title="Ansicht wechseln">⇕</button>
+      <button id="stopp" class="stoppbtn" type="button" disabled title="Skript anhalten">■</button>
+      <button id="run" class="runbtn" type="button" disabled title="Ausführen (Strg+Enter)">▶</button>
+    </div>
+    <div id="edWrap"><div id="binaer"></div></div>
+    <div class="tasten" id="tasten"></div>
+  </section>
+
+  <section id="rechts">
+    <div class="tabs">
+      <button data-tab="t-aus" class="an" type="button">Ausgabe</button>
+      <button data-tab="t-mentor" type="button">Mentor</button>
+      <button data-tab="t-pi" type="button">Pi</button>
+      <button data-tab="t-projekt" type="button">Projekt</button>
+    </div>
+
+    <!-- Ausgabe -->
+    <div class="tab an" id="t-aus">
+      <div id="ausgabe"></div>
+      <div class="inrow" id="eingabeZeile">
+        <input type="text" id="eingabeIn" placeholder="Dein Skript wartet auf eine Eingabe …" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button id="eingabeGo" class="runbtn" type="button">OK</button>
+      </div>
+      <div class="repl">
+        <input type="text" id="replIn" placeholder=">>> Python-Zeile direkt ausführen" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button id="replGo" class="runbtn" type="button" disabled>↵</button>
+        <button id="leeren" class="cbtn" type="button" title="Ausgabe leeren">⌫</button>
+      </div>
+    </div>
+
+    <!-- Mentor -->
+    <div class="tab" id="t-mentor">
+      <div id="chat"></div>
+      <div class="ladder">
+        <button class="btn ghost small" data-m="fehler" id="mFehler" type="button" disabled>Fehler erklären</button>
+        <button class="btn ghost small" data-m="code" type="button">Code erklären</button>
+        <button class="btn ghost small" data-m="weiter" type="button">Nächster Schritt</button>
+        <button class="btn ghost small" data-m="tipp" type="button">Denkanstoß</button>
+        <button class="btn ghost small" data-m="leeren" type="button" title="Gespräch leeren">Leeren</button>
+      </div>
+      <div class="mentorein">
+        <textarea id="mentorIn" class="field" placeholder="Frag den Mentor … (er kennt dein Projekt)"></textarea>
+        <button id="mentorGo" class="btn" type="button">Senden</button>
+      </div>
+    </div>
+
+    <!-- Pi-Simulator -->
+    <div class="tab" id="t-pi">
+      <div class="feld">
+        <div class="farm">
+          <div class="farm-head"><span>Kellerfarm-Simulator</span><span class="muted">Knöpfe antippen</span></div>
+          <p class="leer" id="piLeer">Noch keine Pins benutzt. Starte ein Skript mit <code>gpiozero</code> oder <code>RPi.GPIO</code> – die Bauteile erscheinen hier automatisch.</p>
+          <div class="farm-grid" id="pins"></div>
+        </div>
+        <div class="card">
+          <h3>Sensoren</h3>
+          <p id="piModus"></p>
+          <label class="schalter"><input type="checkbox" id="dhtFehler"> DHT22 wie echt: jede 4. Messung schlägt fehl</label>
+          <div id="regler"></div>
+        </div>
+        <div class="card ref">
+          <h3>Simulierte Hardware</h3>
+          <dl style="margin:0">
+            <dt>gpiozero</dt><dd>OutputDevice, LED, Button, PWMLED, Motor, MCP3008 (K0/K1 Bodenfeuchte, K2 Licht, K3 Wasserstand)</dd>
+            <dt>RPi.GPIO</dt><dd>setup, output, input, PWM, add_event_detect</dd>
+            <dt>board · adafruit_dht · w1thermsensor</dt><dd>board.D4, DHT22(board.D4).temperature / .humidity, DS18B20 für Wasser</dd>
+            <dt>pisim</dt><dd>pisim.sensor("co2"), pisim.name(17, "Grow-Light") – auf dem echten Pi weglassen</dd>
+          </dl>
+          <div class="zeile"><button id="piBeispiel" class="btn small" type="button">Kellerfarm-Beispielprojekt anlegen</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Projekt -->
+    <div class="tab" id="t-projekt">
+      <div class="feld">
+        <div class="card">
+          <h3>Projektziel</h3>
+          <p>Was soll am Ende rauskommen? Der Mentor richtet seine Tipps danach.</p>
+          <textarea class="field" id="ziel" placeholder="z. B. Pumpe schaltet sich ein, wenn die Erde zu trocken ist"></textarea>
+          <div class="zeile"><span class="muted" style="font-size:.88rem">Hauptdatei</span><select id="haupt" class="field"></select></div>
+        </div>
+        <div class="card">
+          <h3>Pakete</h3>
+          <p>Stehen in <code>requirements.txt</code> und werden vor jedem Start automatisch installiert.</p>
+          <div class="zeile">
+            <input type="text" id="pakName" class="field" placeholder="z. B. requests, rich, sympy" autocapitalize="off" autocorrect="off" spellcheck="false">
+            <button id="pakGo" class="btn small" type="button" disabled>Installieren</button>
+          </div>
+          <div class="chips" id="pakete"></div>
+          <p>Schon eingebaut – antippen fügt den Import ein:</p>
+          <div class="chips" id="vorPakete"></div>
+          <div class="zeile"><button id="pakListe" class="btn ghost small" type="button" disabled>Alles Installierte anzeigen</button></div>
+        </div>
+        <div class="card">
+          <h3>Dateien</h3>
+          <div class="zeile">
+            <button id="hochladen" class="btn ghost small" type="button">Dateien hinzufügen</button>
+            <button id="zipExport" class="btn ghost small" type="button">Als ZIP speichern</button>
+            <button id="zipImport" class="btn ghost small" type="button">ZIP öffnen</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>GitHub-Abgleich</h3>
+          <p id="ghInfo">So hast du dein Projekt auf jedem Gerät. Zugangsschlüssel unter ⚙ eintragen.</p>
+          <div class="zeile">
+            <input type="text" id="ghRepo" class="field" placeholder="Feuerfuchs89/Kellerfarm" autocapitalize="off" autocorrect="off" spellcheck="false">
+            <input type="text" id="ghBranch" class="field" placeholder="main" style="max-width:110px;min-width:70px" autocapitalize="off" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="zeile">
+            <button id="ghPush" class="btn small" type="button">Hochladen (Push)</button>
+            <button id="ghPull" class="btn ghost small" type="button">Holen (Pull)</button>
+          </div>
+          <p id="ghStand"></p>
+        </div>
+        <div class="card" id="eingabenKarte">
+          <h3 id="eingabenTitel">Eingaben für input()</h3>
+          <p id="eingabenText"></p>
+          <textarea class="field" id="eingaben" placeholder="Eine Antwort pro Zeile"></textarea>
+        </div>
+        <div class="card">
+          <h3>Projekte</h3>
+          <div class="zeile">
+            <button id="projNeu" class="btn small" type="button">Neues Projekt</button>
+            <button id="projKlonen" class="btn ghost small" type="button">Aus GitHub holen</button>
+          </div>
+          <div class="zeile">
+            <button id="projUmben" class="btn ghost small" type="button">Umbenennen</button>
+            <button id="projLoesch" class="btn ghost small" type="button" style="color:var(--err)">Projekt löschen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabsunten" aria-label="Bereiche"><div class="in">
+  <a href="index.html#path"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>Lernpfad</a>
+  <a href="index.html#mentor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Mentor</a>
+  <a href="index.html#play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>Spielwiese</a>
+  <a href="werkstatt.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>Werkstatt</a>
+</div></nav>
+
+<input type="file" id="dateiWahl" hidden multiple>
+<input type="file" id="zipWahl" accept=".zip,application/zip" hidden>
+
+<div class="modal" id="dialog"><div class="box">
+  <p id="dlgText"></p>
+  <input type="text" id="dlgIn" class="field" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="knoepfe" id="dlgKnoepfe"></div>
+</div></div>
+
+<div class="modal" id="einstellungen"><div class="box">
+  <span class="eyebrow">Werkstatt</span>
+  <h3 style="margin:2px 0 6px;font:700 1.2rem var(--f-display)">Einstellungen</h3>
+  <label for="eToken"><b>GitHub-Zugangsschlüssel</b> (Fine-grained Token: Contents lesen &amp; schreiben, Administration fürs Anlegen neuer Repos)</label>
+  <input type="password" id="eToken" class="field" autocomplete="off" placeholder="github_pat_…">
+  <label>KI-Mentor</label>
+  <p class="muted" id="eKI" style="font-size:.9rem"></p>
+  <label for="eSchrift">Schriftgröße im Editor</label>
+  <select id="eSchrift" class="field"><option>12</option><option>13</option><option selected>14</option><option>15</option><option>16</option><option>18</option></select>
+  <p class="muted" id="eInfo" style="margin-top:12px;font-size:.88rem"></p>
+  <div class="knoepfe"><button id="eNeustart" class="btn ghost small" type="button">Python neu starten</button><button id="eOk" class="btn small" type="button">Speichern</button></div>
+</div></div>
+
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="werkstatt.js"></script>
+</body>
+</html>
