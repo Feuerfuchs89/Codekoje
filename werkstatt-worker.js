@@ -686,7 +686,7 @@ async function start(m) {
   pyodide.runPython(PY_HILFE);
 
   sende("status", { text: "micropip wird geladen …" });
-  await pyodide.loadPackage("micropip");
+  await pyodide.loadPackage("micropip", { messageCallback: () => {} });
 
   const info = pyodide.runPython("import sys; sys.version.split()[0]");
   sende("bereit", { python: info, pyodide: pyodideVersion, live: !!sab });
@@ -707,6 +707,8 @@ function rmrf(pfad) {
 
 function schreibeProjekt(name, dateien) {
   const dir = projDir(name);
+  // Python steht nach dem letzten Lauf noch im Projektordner – erst raus, sonst lässt er sich nicht löschen
+  try { pyodide.FS.chdir("/home/pyodide"); } catch (e) { }
   rmrf(dir);
   pyodide.FS.mkdirTree(dir);
   for (const [pfad, inhalt] of Object.entries(dateien)) {
@@ -780,7 +782,10 @@ async function vorbereiten(dateien) {
   const alleCode = Object.entries(dateien).filter(([p, v]) => p.endsWith(".py") && typeof v === "string").map(([, v]) => v).join("\n");
   try {
     await pyodide.loadPackagesFromImports(alleCode, {
-      messageCallback: (t) => sende("status", { text: t }),
+      messageCallback: (t) => {
+        sende("status", { text: t });
+        if (/^Loading /.test(t)) { raus("out", "📦 Lade " + t.slice(8) + " … (nur beim ersten Mal, dauert etwas)\n"); flush(); }
+      },
       errorCallback: (t) => raus("err", t + "\n"),
     });
   } catch (e) { }
@@ -794,8 +799,10 @@ function kurz(e) {
 }
 
 /* ---------- Nachrichten ---------- */
-onmessage = async (ev) => {
-  const m = ev.data;
+let kette = Promise.resolve();
+onmessage = (ev) => { kette = kette.then(() => bearbeite(ev.data)); };
+
+async function bearbeite(m) {
   try {
     switch (m.typ) {
       case "start":
@@ -840,7 +847,7 @@ onmessage = async (ev) => {
       case "complete": {
         if (!jediGeladen) {
           sende("status", { text: "Vervollständigung wird geladen …" });
-          await pyodide.loadPackage("jedi");
+          await pyodide.loadPackage("jedi", { messageCallback: () => {}, errorCallback: () => {} });
           jediGeladen = true;
           sende("status", { text: "bereit", ok: true });
         }
@@ -852,7 +859,9 @@ onmessage = async (ev) => {
     }
   } catch (e) {
     flush();
-    const text = String(e && e.message ? e.message : e);
+    const text = e && e.message ? String(e.message)
+      : e && e.errno !== undefined ? `Interner Dateisystem-Fehler (errno ${e.errno}${e.code ? ", " + e.code : ""}) – bitte Python neu starten (⚙)`
+      : String(e);
     if (m.typ === "install") {
       raus("err", `✘ ${m.name} ließ sich nicht installieren:\n${kurz(text)}\n` +
         "→ Meist heißt das: Das Paket enthält C-Code, für den es keine Browser-Version (WebAssembly) gibt.\n");
@@ -870,4 +879,4 @@ onmessage = async (ev) => {
       sende("fertig", { fehler: null, aenderungen: { geaendert: {}, geloescht: [] } });
     }
   }
-};
+}

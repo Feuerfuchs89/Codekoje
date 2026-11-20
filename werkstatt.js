@@ -118,8 +118,11 @@ const bestaetige = (text, ja = "OK") => dialog(text, { knoepfe: [["Abbrechen", f
 const melde = (text) => dialog(text, { knoepfe: [["OK", true, "haupt"]] });
 
 const aus = $("ausgabe");
+let mitscrollen = true;
+aus.addEventListener("scroll", () => { mitscrollen = aus.scrollHeight - aus.scrollTop - aus.clientHeight < 60; });
+function nachUnten() { mitscrollen = true; aus.scrollTop = aus.scrollHeight; }
 function schreibe(text, klasse) {
-  const unten = aus.scrollHeight - aus.scrollTop - aus.clientHeight < 40;
+  const unten = mitscrollen;
   const s = document.createElement("span"); if (klasse) s.className = klasse; s.textContent = text; aus.appendChild(s);
   // nicht endlos wachsen lassen
   while (aus.childNodes.length > 3000) aus.removeChild(aus.firstChild);
@@ -587,8 +590,9 @@ function verarbeite(m) {
     case "out": schreibe(m.text); letzteAusgabe = (letzteAusgabe + m.text).slice(-4000); break;
     case "err": schreibe(m.text, "err"); letzteAusgabe = (letzteAusgabe + m.text).slice(-4000); break;
     case "bild": {
-      const i = new Image(); i.src = "data:image/png;base64," + m.daten; aus.appendChild(i);
-      setTimeout(() => aus.scrollTop = aus.scrollHeight, 60); break;
+      const i = new Image(); const unten = mitscrollen;
+      i.onload = () => { if (unten) nachUnten(); };
+      i.src = "data:image/png;base64," + m.daten; aus.appendChild(i); break;
     }
     case "pi": piEreignis(m.ev); break;
     case "eingabe": eingabeZeigen(true); break;
@@ -629,7 +633,8 @@ function ausfuehren() {
   piZuruecksetzen();
   if (window.innerWidth <= 820 && document.body.classList.contains("nur-editor")) setzeLayout("");
   zeigeTab("t-aus");
-  schreibe(`\n▶ ${datei}\n`, "info");
+  aus.innerHTML = ""; nachUnten();
+  schreibe(`▶ ${datei}\n`, "info");
   laufStart = performance.now(); laufDatei = datei;
   sende({ typ: "run", projekt: P.name, dateien: P.dateien, datei, konsole: false, stdin: P.eingaben || "", werte: fallbackWerte() });
 }
@@ -663,6 +668,7 @@ function laufFertig(m) {
     schreibeKnopf("🧭 Mentor: Fehler erklären", () => { zeigeTab("t-mentor"); mentorFrage("fehler"); });
     status("Fehler", false);
   } else {
+    if (!letzteAusgabe && !aus.querySelector("img")) schreibe("(keine Ausgabe)\n", "info");
     status(`fertig (${sek} s)`, true);
   }
 }
